@@ -1,0 +1,132 @@
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    container_name: ecommerce-db
+    restart: always
+    profiles: ["infra", "dev", "full"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ecommerce
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  adminer:
+    image: adminer:latest
+    container_name: ecommerce-adminer
+    restart: always
+    profiles: ["infra", "dev", "full"]
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+
+  ai:
+    build:
+      context: ./ai
+      dockerfile: Dockerfile
+    container_name: ecommerce-ai
+    restart: always
+    profiles: ["dev", "full"]
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000" # FastAPI chatbot
+      - "8501:8501" # Streamlit demo
+    environment:
+      DATABASE_URL: "postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/ecommerce"
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-BAAI/bge-m3}
+      LLM_MODEL: ${LLM_MODEL:-llama3.1:8b}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      TOP_K_CONTEXT: ${TOP_K_CONTEXT:-5}
+      CHAT_HISTORY_LIMIT: ${CHAT_HISTORY_LIMIT:-10}
+    networks:
+      - app-network
+
+  # Spring Boot server (thay NestJS)
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: ecommerce-server
+    restart: always
+    profiles: ["dev", "full"]
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "6000:6000"
+    environment:
+      SERVER_PORT: 6000
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      DATABASE_URL: "jdbc:postgresql://db:5432/ecommerce"
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      VNPAY_TMN_CODE: ${VNPAY_TMN_CODE:-}
+      VNPAY_HASH_SECRET: ${VNPAY_HASH_SECRET:-}
+      VNPAY_RETURN_URL: ${VNPAY_RETURN_URL:-http://localhost:3000/payment-result}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USER: ${MAIL_USER:-}
+      MAIL_PASS: ${MAIL_PASS:-}
+      AI_SIDECAR_URL: http://ai:8000
+    networks:
+      - app-network
+
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+    container_name: ecommerce-admin
+    restart: always
+    profiles: ["full"]
+    ports:
+      - "8081:8080"
+    depends_on:
+      - server
+    volumes:
+      - ./admin:/app
+      - /app/node_modules
+    networks:
+      - app-network
+    environment:
+      - VITE_PROXY_TARGET=http://server:6000
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: ecommerce-client
+    restart: always
+    profiles: ["full"]
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    networks:
+      - app-network
+    environment:
+      - VITE_PROXY_TARGET=http://server:6000
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

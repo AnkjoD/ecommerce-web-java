@@ -1,0 +1,17 @@
+package com.ankkun.ecommerce.module.auth.repository;
+
+import com.ankkun.ecommerce.module.auth.entity.RefreshToken;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+
+import java.time.Instant;
+import java.util.Optional;
+
+public interface RefreshTokenRepository extends JpaRepository<RefreshToken, String> {
+    Optional<RefreshToken> findByTokenHashAndIsRevokedFalseAndExpiresAtAfter(String tokenHash, Instant now);
+
+    @Modifying
+    @Query("UPDATE RefreshToken r SET r.isRevoked = true WHERE r.userId = :userId AND r.isRevoked = false")
+    int revokeAllByUserId(String userId);
+}
