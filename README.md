@@ -172,16 +172,4 @@ npm run build
 
 Fixture integration rollback; file ảnh kiểm thử có thể còn trong thư mục upload. Smoke tạo dữ liệu giả trong database demo. Script smoke-features.py kiểm tra hai checkout đồng thời tranh một món cuối, VNPay/MoMo thử lại, giao hàng/đánh giá/hoàn tiền, coupon, outbox, audit, thống kê và quyền riêng tư chat; sản phẩm fixture được lưu trữ sau khi test qua. Báo cáo JUnit: `server/ecommerce/build/demo/reports/tests/test/index.html`. Frontend được kiểm chứng bằng build và chạy thử trình duyệt; chưa có bộ E2E tự động đầy đủ hoặc benchmark tải.
 
-## Trình diễn và CV
 
-Kịch bản 5–10 phút: đăng nhập → địa chỉ → giỏ/coupon → checkout → thanh toán mô phỏng → admin giao hàng → khách đánh giá → admin trả lời/xem báo cáo, nhật ký, email demo. Thử thanh toán lỗi và hủy để trình bày xử lý ngoại lệ.
-
-Gợi ý CV — chỉnh theo phần bạn trực tiếp thực hiện và có thể giải thích:
-
-> Chuyển backend ứng dụng thương mại điện tử từ NestJS/Prisma sang Java Spring Boot/JPA, tích hợp hai frontend React. Xây dựng JWT với refresh token rotation, phân quyền khách hàng/admin, checkout có transaction và khóa tồn kho, coupon, quản lý đơn/đánh giá và thanh toán mô phỏng local. Kiểm chứng bằng JUnit/MockMvc và HTTP smoke test.
-
-## Phạm vi
-
-Bản này phục vụ **demo local, học tập và trình diễn**. Chưa xác nhận ngang toàn bộ hành vi NestJS, chưa di chuyển dữ liệu Prisma cũ, chưa kiểm chứng thanh toán/vận chuyển/SMTP thật hoặc AI sidecar. Chat local không phải LLM/RAG. Tài khoản/khóa demo không dùng khi triển khai public.
-
-Schema demo dùng `hibernate.ddl-auto=update`. Triển khai thật cần migration có phiên bản, secrets riêng, HTTPS, giới hạn yêu cầu, lưu trữ ảnh phù hợp, job hết hạn đơn và kiểm thử tải/bảo mật. Frontend còn cảnh báo bundle lớn. Xem [ai/README.md](ai/README.md) nếu tiếp tục phát triển sidecar.
