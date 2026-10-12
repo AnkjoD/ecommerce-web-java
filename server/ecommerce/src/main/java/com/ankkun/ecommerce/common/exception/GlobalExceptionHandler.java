@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ApiResponse<?>> handleNotFound(NotFoundException ex) {
@@ -63,9 +64,25 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ApiResponse.error(ex.getMessage()));
     }
 
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<?>> missingRoute(Exception ex) {
+        return ResponseEntity.status(404).body(ApiResponse.error("Endpoint not found"));
+    }
+
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<?>> wrongMethod(Exception ex) {
+        return ResponseEntity.status(405).body(ApiResponse.error("Method not allowed"));
+    }
+
+    @ExceptionHandler({org.springframework.web.multipart.MaxUploadSizeExceededException.class,org.springframework.web.bind.MissingServletRequestParameterException.class,org.springframework.web.multipart.support.MissingServletRequestPartException.class,org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,IllegalArgumentException.class, org.springframework.http.converter.HttpMessageNotReadableException.class})
+    public ResponseEntity<ApiResponse<?>> invalidInput(Exception ex) {
+        return ResponseEntity.badRequest().body(ApiResponse.error("Invalid request"));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<?>> handleGeneral(Exception ex) {
+        LOG.error("Unhandled API error", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("Internal Server Error: " + ex.getMessage()));
+                .body(ApiResponse.error("Internal Server Error"));
     }
 }

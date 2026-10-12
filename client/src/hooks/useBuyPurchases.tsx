@@ -14,48 +14,38 @@ export default function useBuyPurchases() {
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false)
 
   const buyPurchasesMutation = useMutation({
-    mutationFn: (body: { address_id: string; payment_method: string; coupon_code?: string; save_card?: boolean }) => 
+    mutationFn: (body: { address_id: string; payment_method: string; coupon_code?: string; save_card?: boolean; item_ids?: string[] }) =>
       purchaseApi.buyPurchases(body),
     onSuccess: async (response, variables) => {
       const order = response.data.data
-      
+
       // Nếu là VNPay -> Lấy link và redirect theo phương thức POST (với Params)
       if (variables.payment_method === 'vnpay') {
         try {
           const res = await paymentApi.createVnPayUrl(order.id, variables.save_card)
-          const { url, params } = res.data.data
+          const { url } = res.data.data
 
-          // Tạo form ẩn và submit để chuyển hướng sang VNPAY theo phương thức POST
-          const form = document.createElement('form')
-          form.method = 'GET' // VNPAY 2.1.0 dùng GET redirect với tham số đã ký, nhưng PDF đề cập POST. 
-          // Tuy nhiên, sandbox public thường dùng GET. Để bảo mật và hỗ trợ Token, ta dùng POST nếu URL yêu cầu.
-          // Ở đây ta cứ submit dạng POST/GET tùy cấu hình VNPAY_URL.
-          form.action = url
-
-          Object.keys(params).forEach((key) => {
-            const input = document.createElement('input')
-            input.type = 'hidden'
-            input.name = key
-            input.value = params[key]
-            form.appendChild(input)
-          })
-
-          document.body.appendChild(form)
-          form.submit()
+          window.location.assign(url)
           return
         } catch (error) {
-          toast.error('Không thể tạo liên kết thanh toán VNPay')
+          toast.error('Đơn hàng đã tạo, nhưng chưa mở được VNPay. Bạn có thể xem đơn trong lịch sử.')
+          queryClient.invalidateQueries({ queryKey: ['purchases'] })
+          navigate(path.purchase)
+          return
         }
       }
 
       // Nếu là MoMo -> Lấy link và redirect
       if (variables.payment_method === 'momo') {
         try {
-          const res = await paymentApi.createMomoUrl(order.id)
+          const res = await paymentApi.createMomoUrl(order.id, variables.save_card)
           window.location.href = res.data.data // Redirect to MoMo
           return
         } catch (error) {
-          toast.error('Không thể tạo liên kết thanh toán MoMo')
+          toast.error('Đơn đã tạo nhưng chưa mở được thanh toán; bạn có thể thử lại từ Đơn mua')
+          queryClient.invalidateQueries({ queryKey: ['purchases'] })
+          navigate(path.purchase)
+          return
         }
       }
 
@@ -65,7 +55,7 @@ export default function useBuyPurchases() {
     },
     onError: (error: any) => {
       console.error('Order creation failed:', error)
-      toast.error('Đặt hàng không thành công. Vui lòng thử lại.')
+      toast.error(error?.response?.data?.message || 'Đặt hàng không thành công. Vui lòng thử lại.')
     }
   })
 

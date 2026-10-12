@@ -9,14 +9,14 @@ import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
 
 interface LogoProps {
-    size: "small" | "medium" | "large",
+    size?: "small" | "medium" | "large",
     sx?:  SxProps<Theme>
 }
 
 function Logo({sx,size = "large"}: LogoProps) {
     const {mode} = useColorMode();
     const isDark = mode === "dark";
-    const sizeVariant: Record<LogoProps["size"], TypographyVariant> = {
+    const sizeVariant: Record<NonNullable<LogoProps["size"]>, TypographyVariant> = {
         small: "h6",
         medium: "h5",
         large: "h4"

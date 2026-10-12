@@ -7,7 +7,7 @@ const productsApi = {
     if (params?.page) query.append('page', String(params.page));
     if (params?.limit) query.append('limit', String(params.limit));
     if (params?.q) query.append('q', params.q);
-    return http.get<{ data: any[]; total: number }>(`/products?${query.toString()}`);
+    return http.get<{ data: any[]; total: number }>(`/admin/products?${query.toString()}`);
   },
   
   createProduct: (data: any) => 

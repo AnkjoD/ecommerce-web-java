@@ -36,7 +36,8 @@ class Http {
     this.instance.interceptors.response.use(
       (res) => res,
       async (error: AxiosError) => {
-        const isUnauthorized = error.response?.status === 401
+        const config = error.config as (typeof error.config & { _retried?: boolean })
+        const isUnauthorized = error.response?.status === 401 && !config?._retried
         const isRefreshUrl = error.config?.url?.includes(URL_REFRESH_TOKEN)
         const isAuthUrl = error.config?.url?.includes(URL_LOGIN) || error.config?.url?.includes(URL_REGISTER)
 
@@ -44,6 +45,8 @@ class Http {
         if (!isUnauthorized || isRefreshUrl || isAuthUrl) {
           return Promise.reject(error)
         }
+
+        if (config) config._retried = true
 
         // Nếu đang có refresh request khác đang xử lý → xếp vào queue, chờ
         if (this.isRefreshing) {

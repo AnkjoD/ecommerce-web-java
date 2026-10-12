@@ -39,7 +39,7 @@ const ProductBox: React.FC<ProductBoxProps> = ({ data }) => {
   const originalPrice = firstVariant.price_before_discount
   const rating = product.rating_avg || 0
   const sold = product.sold_count || 0
-  const DEFAULT_PRODUCT_IMAGE = 'https://placehold.co/600x400?text=Homura+Mall'
+  const DEFAULT_PRODUCT_IMAGE = '/assets/demo-product-0.svg'
   const imageUrl = firstVariant.image_url || product.media?.thumbnail || DEFAULT_PRODUCT_IMAGE
   const categoryName = product.category?.name || 'Chưa phân loại'
   const productId = firstVariant.id 

@@ -94,6 +94,7 @@ public class AuthService {
 
     @Transactional
     public void logout(String userId) {
+        var user=userRepository.findLocked(userId).orElseThrow();user.setTokenVersion(user.getTokenVersion()+1);
         refreshTokenRepository.revokeAllByUserId(userId);
     }
 
@@ -109,7 +110,7 @@ public class AuthService {
         String userId = claims.getSubject();
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ForbiddenException("Access Denied"));
-        if (!user.getIsActive()) throw new ForbiddenException("Access Denied");
+        if (!user.getIsActive() || claims.get("ver",Integer.class)==null || claims.get("ver",Integer.class)!=user.getTokenVersion().intValue()) throw new ForbiddenException("Access Denied");
 
         String tokenHash = hash(refreshToken);
         RefreshToken rt = refreshTokenRepository
@@ -121,17 +122,6 @@ public class AuthService {
         refreshTokenRepository.save(rt);
 
         return buildAuthResponse(user);
-    }
-
-    @Transactional
-    public Object seedAdmin() {
-        User first = userRepository.findAll().stream()
-                .min((a, b) -> a.getCreatedAt().compareTo(b.getCreatedAt()))
-                .orElseThrow(() -> new BadRequestException("Chưa có người dùng nào trong hệ thống"));
-
-        first.setRole(UserRole.admin);
-        userRepository.save(first);
-        return java.util.Map.of("message", "Đã nâng cấp tài khoản đầu tiên lên Admin", "email", first.getEmail());
     }
 
     // ---- private helpers ----
@@ -150,15 +140,11 @@ public class AuthService {
                 .tokenHash(hash(rt))
                 .expiresAt(Instant.now().plus(7, ChronoUnit.DAYS))
                 .build();
-        try {
-            refreshTokenRepository.save(token);
-        } catch (Exception ignored) {
-            // unique constraint violation — race condition safe to ignore
-        }
+        refreshTokenRepository.saveAndFlush(token);
     }
 
     private AuthUserDto mapToAuthUser(User user) {
-        String avatar = "https://api.dicebear.com/7.x/avataaars/svg?seed=" + user.getId();
+        String avatar = user.getAvatar()==null ? "/assets/demo-avatar.svg" : user.getAvatar();
         return new AuthUserDto(user.getId(), user.getEmail(), user.getFullName(),
                 user.getRole().name(), avatar);
     }

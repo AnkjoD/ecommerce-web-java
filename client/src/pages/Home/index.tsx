@@ -93,7 +93,7 @@ const Home = () => {
             Trải nghiệm tương lai số
           </Typography>
           <Typography variant='h6' sx={{ mb: 6, opacity: 0.8, maxWidth: '700px', mx: 'auto', fontWeight: 400 }}>
-            Tham gia cộng đồng công nghệ cao cấp tại Homura Mall. Miễn phí vận chuyển toàn quốc cho tất cả đơn hàng từ 1.000.000 VNĐ.
+            Tham gia cộng đồng công nghệ cao cấp tại Homura Mall. Miễn phí vận chuyển toàn quốc cho tất cả đơn hàng từ 500.000 VNĐ sau giảm giá.
           </Typography>
           <Button 
             variant='contained' 

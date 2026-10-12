@@ -2,7 +2,7 @@ import http from '../utils/http';
 
 const categoriesApi = {
   getTree: () => http.get<any[]>('/categories/tree'),
-  getAll: () => http.get<any[]>('/categories'),
+  getAll: () => http.get<any[]>('/admin/categories'),
   create: (data: { name: string; parent_id?: string | null }) => 
     http.post<any>('/admin/categories', data),
   update: (id: string, data: any) => 

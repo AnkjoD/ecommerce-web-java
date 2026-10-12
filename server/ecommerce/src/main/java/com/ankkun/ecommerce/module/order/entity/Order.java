@@ -7,6 +7,8 @@ import com.ankkun.ecommerce.module.address.entity.Address;
 import com.ankkun.ecommerce.module.review.entity.Review;
 import com.ankkun.ecommerce.module.user.entity.User;
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -68,8 +70,10 @@ public class Order {
     @Column(name = "ghtk_label", unique = true)
     private String ghtkLabel;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "shipping_log", columnDefinition = "jsonb")
     private String shippingLog;
+    @JdbcTypeCode(SqlTypes.JSON) @Column(name="address_snapshot",columnDefinition="jsonb") private String addressSnapshot;
 
     @Column(name = "created_at", updatable = false)
     @Builder.Default

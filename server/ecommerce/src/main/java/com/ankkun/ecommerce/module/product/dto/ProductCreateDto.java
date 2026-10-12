@@ -3,23 +3,28 @@ package com.ankkun.ecommerce.module.product.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import com.fasterxml.jackson.databind.JsonNode;
 
 @Data
 public class ProductCreateDto {
     @NotBlank
-    private String name;
+    @jakarta.validation.constraints.Size(min=1,max=255) private String name;
     
-    @NotBlank
     private String slug;
+    @jakarta.validation.Valid
+    private java.util.List<VariantCreateDto> variants;
     
     private String brand;
     
     @JsonProperty("category_id")
     private String categoryId;
     
-    private String status = "draft";
-    private String description = "{}";
-    private String attributes = "{}";
-    private String media = "{}";
-    private String seo = "{}";
+    @jakarta.validation.constraints.Pattern(regexp="draft|active|archived") private String status = "draft";
+    private JsonNode description;
+    private JsonNode attributes;
+    private JsonNode media;
+    private JsonNode tags;
+    @JsonProperty("attribute_order") private String[] attributeOrder;
+    @JsonProperty("primary_variant_id") private String primaryVariantId;
+    private JsonNode seo;
 }

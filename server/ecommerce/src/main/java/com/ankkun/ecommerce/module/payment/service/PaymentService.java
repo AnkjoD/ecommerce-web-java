@@ -32,9 +32,14 @@ public class PaymentService {
     @Value("${vnpay.return-url}") private String returnUrl;
     @Value("${vnpay.payment-url}") private String vnpUrl;
 
-    public Map<String, Object> createPaymentUrl(String orderId, String ipAddr) {
-        Order order = orderRepository.findById(orderId).orElseThrow(() -> new BadRequestException("Đơn hàng không tồn tại"));
+    public boolean enabled() { return !tmnCode.isBlank() && !hashSecret.isBlank(); }
+    public Map<String, Object> createPaymentUrl(String userId, String orderId, String ipAddr) {
+        if (!enabled()) throw new BadRequestException("VNPay chưa được cấu hình");
+        Order order = orderRepository.findByIdAndUserId(orderId, userId).orElseThrow(() -> new BadRequestException("Đơn hàng không tồn tại"));
 
+        if (order.getPaymentMethod() != com.ankkun.ecommerce.common.enums.PaymentMethod.vnpay
+                || order.getPaymentStatus() == PaymentStatus.paid || order.getStatus() == OrderStatus.cancelled)
+            throw new BadRequestException("Đơn hàng không thể thanh toán VNPay");
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
         String vnp_TxnRef = order.getOrderCode();
@@ -55,8 +60,9 @@ public class PaymentService {
         vnp_Params.put("vnp_ReturnUrl", returnUrl);
         vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
 
-        Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
+        Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+        formatter.setTimeZone(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
         String vnp_CreateDate = formatter.format(cld.getTime());
         vnp_Params.put("vnp_CreateDate", vnp_CreateDate);
 
@@ -72,9 +78,9 @@ public class PaymentService {
         for (String fieldName : fieldNames) {
             String fieldValue = vnp_Params.get(fieldName);
             if ((fieldValue != null) && (!fieldValue.isEmpty())) {
-                hashData.append(fieldName).append('=').append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
-                query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII)).append('=')
-                     .append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
+                hashData.append(fieldName).append('=').append(URLEncoder.encode(fieldValue, StandardCharsets.UTF_8));
+                query.append(URLEncoder.encode(fieldName, StandardCharsets.UTF_8)).append('=')
+                     .append(URLEncoder.encode(fieldValue, StandardCharsets.UTF_8));
                 hashData.append('&');
                 query.append('&');
             }
@@ -92,6 +98,7 @@ public class PaymentService {
 
     @Transactional
     public Object vnpayReturn(Map<String, String> params) {
+        if (!enabled()) throw new BadRequestException("VNPay chưa được cấu hình");
         String secureHash = params.get("vnp_SecureHash");
         params.remove("vnp_SecureHash");
         params.remove("vnp_SecureHashType");
@@ -102,19 +109,24 @@ public class PaymentService {
         for (String fieldName : fieldNames) {
             String fieldValue = params.get(fieldName);
             if ((fieldValue != null) && (!fieldValue.isEmpty())) {
-                hashData.append(fieldName).append('=').append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
+                hashData.append(fieldName).append('=').append(URLEncoder.encode(fieldValue, StandardCharsets.UTF_8));
                 hashData.append('&');
             }
         }
         if (hashData.length() > 0) hashData.setLength(hashData.length() - 1);
 
         String signValue = hmacSHA512(hashSecret, hashData.toString());
-        if (!signValue.equals(secureHash)) throw new BadRequestException("Invalid signature");
+        if (secureHash == null || !java.security.MessageDigest.isEqual(signValue.getBytes(StandardCharsets.UTF_8), secureHash.getBytes(StandardCharsets.UTF_8))) throw new BadRequestException("Invalid signature");
 
         String orderCode = params.get("vnp_TxnRef");
         Order order = orderRepository.findByOrderCode(orderCode).orElseThrow(() -> new BadRequestException("Order not found"));
 
-        if ("00".equals(params.get("vnp_ResponseCode"))) {
+        order = orderRepository.findLocked(order.getId()).orElseThrow();
+        if (!tmnCode.equals(params.get("vnp_TmnCode")) || !order.getTotal().multiply(new java.math.BigDecimal("100")).toBigIntegerExact().toString().equals(params.get("vnp_Amount")))
+            throw new BadRequestException("Invalid payment amount or merchant");
+        if (order.getStatus() == OrderStatus.cancelled) throw new BadRequestException("Order cancelled");
+        if (order.getPaymentStatus() == PaymentStatus.paid) return Map.of("isSuccess", true, "order_code", order.getOrderCode(), "amount", order.getTotal());
+        if ("00".equals(params.get("vnp_ResponseCode")) && "00".equals(params.get("vnp_TransactionStatus"))) {
             order.setPaymentStatus(PaymentStatus.paid);
             if (order.getStatus() == OrderStatus.pending) order.setStatus(OrderStatus.confirmed);
             orderRepository.save(order);
@@ -127,11 +139,11 @@ public class PaymentService {
             payment.setPaidAt(Instant.now());
             paymentRepository.save(payment);
 
-            return Map.of("success", true, "message", "Giao dịch thành công", "order_id", order.getId());
+            return Map.of("isSuccess", true, "message", "Giao dịch thành công", "order_code", order.getOrderCode(), "amount", order.getTotal());
         } else {
             order.setPaymentStatus(PaymentStatus.failed);
             orderRepository.save(order);
-            return Map.of("success", false, "message", "Giao dịch thất bại");
+            return Map.of("isSuccess", false, "message", "Giao dịch thất bại", "order_code", order.getOrderCode(), "amount", order.getTotal());
         }
     }
 
@@ -147,7 +159,7 @@ public class PaymentService {
             }
             return sb.toString();
         } catch (Exception ex) {
-            return "";
+            throw new IllegalStateException("Cannot sign payment request", ex);
         }
     }
 }

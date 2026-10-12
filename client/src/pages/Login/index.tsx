@@ -139,10 +139,11 @@ const Login = () => {
                             fullWidth
                             variant="outlined"
                             color = "inherit"
+                            disabled
                             startIcon = {<GoogleIcon />}
                             sx = {{padding: 1}}
                         >
-                            Sign in with Google
+                            Google chưa bật trong demo
                         </Button>
                         <Typography sx = {{display: 'flex', justifyContent: 'center', gap: 1}}>
                             Don't have an account?

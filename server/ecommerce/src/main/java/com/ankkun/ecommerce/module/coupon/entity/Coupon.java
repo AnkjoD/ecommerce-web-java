@@ -7,6 +7,7 @@ import org.hibernate.annotations.UuidGenerator;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+@com.fasterxml.jackson.databind.annotation.JsonNaming(com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy.class)
 @Entity
 @Table(name = "coupons",
         indexes = @Index(columnList = "code"))

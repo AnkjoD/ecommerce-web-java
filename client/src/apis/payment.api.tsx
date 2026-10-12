@@ -4,17 +4,18 @@ import type { SuccessResponseApi } from "~/types/utils.type";
 const PAYMENT_URL = "/payments";
 
 const paymentApi = {
+    getConfig: () => http.get<SuccessResponseApi<{ vnpay: boolean; momo: boolean; mode: string }>>(`${PAYMENT_URL}/config`),
     // Tạo link thanh toán VNPay cho đơn hàng
     createVnPayUrl: (orderId: string, saveCard = false) => {
         return http.post<SuccessResponseApi<{ url: string; params: Record<string, string> }>>(
-            `${PAYMENT_URL}/vnpay/create/${orderId}`, 
-            {}, 
+            `${PAYMENT_URL}/create-url`,
+            { order_id: orderId },
             { params: { saveCard } }
         );
     },
     // Tạo link thanh toán MoMo cho đơn hàng
-    createMomoUrl: (orderId: string) => {
-        return http.post<SuccessResponseApi<string>>(`${PAYMENT_URL}/momo/create/${orderId}`);
+    createMomoUrl: (orderId: string, saveCard = false) => {
+        return http.post<SuccessResponseApi<string>>(`${PAYMENT_URL}/momo/create/${orderId}`, {}, { params: { saveCard } });
     },
     // Lấy danh sách thẻ đã lưu
     getSavedMethods: () => {
@@ -31,7 +32,7 @@ const paymentApi = {
             order_code: string;
             amount: number;
             message?: string;
-        }>>(`${PAYMENT_URL}/vnpay/callback`, { params });
+        }>>(`${PAYMENT_URL}/vnpay-return`, { params });
     }
 }
 

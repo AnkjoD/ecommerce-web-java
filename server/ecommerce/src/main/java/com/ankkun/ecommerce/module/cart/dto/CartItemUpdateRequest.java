@@ -5,5 +5,6 @@ import lombok.Data;
 
 @Data
 public class CartItemUpdateRequest {
+    @jakarta.validation.constraints.Min(0)
     private int quantity;
 }

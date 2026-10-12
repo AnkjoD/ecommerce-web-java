@@ -1,129 +1,68 @@
 package com.ankkun.ecommerce.module.cart.service;
-
-import com.ankkun.ecommerce.common.exception.BadRequestException;
-import com.ankkun.ecommerce.common.exception.NotFoundException;
-import com.ankkun.ecommerce.module.cart.dto.CartItemRequest;
-import com.ankkun.ecommerce.module.cart.dto.CartItemResponse;
-import com.ankkun.ecommerce.module.cart.dto.CartResponse;
-import com.ankkun.ecommerce.module.cart.entity.Cart;
-import com.ankkun.ecommerce.module.cart.entity.CartItem;
-import com.ankkun.ecommerce.module.cart.repository.CartItemRepository;
-import com.ankkun.ecommerce.module.cart.repository.CartRepository;
-import com.ankkun.ecommerce.module.product.dto.ProductVariantResponse;
-import com.ankkun.ecommerce.module.product.entity.ProductVariant;
+import com.ankkun.ecommerce.common.exception.*;
+import com.ankkun.ecommerce.module.cart.dto.*;
+import com.ankkun.ecommerce.module.cart.entity.*;
+import com.ankkun.ecommerce.module.cart.repository.*;
 import com.ankkun.ecommerce.module.product.repository.ProductVariantRepository;
+import com.ankkun.ecommerce.module.product.service.ProductService;
+import com.ankkun.ecommerce.module.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
-import java.util.stream.Collectors;
-
+import java.math.BigDecimal;
+import java.util.ArrayList;
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class CartService {
-
-    private final CartRepository cartRepository;
-    private final CartItemRepository cartItemRepository;
-    private final ProductVariantRepository variantRepository;
-
-    public CartResponse getCart(String userId) {
-        Cart cart = cartRepository.findByUserId(userId).orElseGet(() -> {
-            Cart newCart = Cart.builder().userId(userId).build();
-            return cartRepository.save(newCart);
-        });
-        return toResponse(cart);
+    private final CartRepository carts;
+    private final CartItemRepository items;
+    private final ProductVariantRepository variants;
+    private final ProductService products;
+    private final UserRepository users;
+    private Cart cart(String userId) {
+        users.findLocked(userId).orElseThrow(() -> new UnauthorizedException("User not found"));
+        return carts.findByUserId(userId).orElseGet(() -> carts.save(Cart.builder().userId(userId).build()));
     }
-
-    @Transactional
-    public CartResponse addItem(String userId, CartItemRequest dto) {
-        Cart cart = cartRepository.findByUserId(userId).orElseGet(() -> {
-            Cart newCart = Cart.builder().userId(userId).build();
-            return cartRepository.save(newCart);
-        });
-
-        ProductVariant variant = variantRepository.findById(dto.getVariantId())
-                .orElseThrow(() -> new NotFoundException("Variant not found"));
-
-        if (variant.getStockQuantity() < dto.getQuantity()) {
-            throw new BadRequestException("Hết hàng");
-        }
-
-        Optional<CartItem> existing = cartItemRepository.findByCartIdAndVariantId(cart.getId(), dto.getVariantId());
-        if (existing.isPresent()) {
-            CartItem item = existing.get();
-            item.setQuantity(item.getQuantity() + dto.getQuantity());
-            cartItemRepository.save(item);
-        } else {
-            CartItem item = CartItem.builder()
-                    .cartId(cart.getId())
-                    .variantId(dto.getVariantId())
-                    .quantity(dto.getQuantity())
-                    .build();
-            cartItemRepository.save(item);
-        }
-
-        return getCart(userId);
+    public CartResponse getCart(String userId) { return response(cart(userId)); }
+    public CartResponse addItem(String userId, CartItemRequest req) {
+        Cart cart = cart(userId);
+        var variant = variants.findById(req.getVariantId()).orElseThrow(() -> new NotFoundException("Variant not found"));
+        if (!variant.getIsActive() || !"active".equals(variant.getProduct().getStatus())) throw new BadRequestException("Sản phẩm không còn bán");
+        var item = items.findByCartIdAndVariantId(cart.getId(), variant.getId()).orElse(null);
+        int quantity = Math.addExact(item == null ? 0 : item.getQuantity(), req.getQuantity());
+        if (quantity > variant.getStockQuantity() - variant.getReservedQuantity()) throw new BadRequestException("Không đủ hàng trong kho");
+        if (item == null) {
+            item = CartItem.builder().cartId(cart.getId()).variantId(variant.getId()).variant(variant).quantity(quantity).build();
+            cart.getItems().add(item);
+        } else item.setQuantity(quantity);
+        items.saveAndFlush(item);
+        return response(cart);
     }
-
-    @Transactional
     public CartResponse updateItem(String userId, String variantId, int quantity) {
-        Cart cart = cartRepository.findByUserId(userId).orElseThrow(() -> new NotFoundException("Cart not found"));
-        CartItem item = cartItemRepository.findByCartIdAndVariantId(cart.getId(), variantId)
-                .orElseThrow(() -> new NotFoundException("Item not in cart"));
-        
-        ProductVariant variant = variantRepository.findById(variantId).orElseThrow();
-        if (variant.getStockQuantity() < quantity) {
-            throw new BadRequestException("Không đủ hàng trong kho");
-        }
-
-        if (quantity <= 0) {
-            cartItemRepository.delete(item);
-        } else {
+        Cart cart = cart(userId);
+        var item = items.findByCartIdAndVariantId(cart.getId(), variantId).orElseThrow(() -> new NotFoundException("Item not found"));
+        if (quantity < 0) throw new BadRequestException("Số lượng không hợp lệ");
+        if (quantity == 0) { cart.getItems().remove(item); items.delete(item); }
+        else {
+            if (quantity > item.getVariant().getStockQuantity() - item.getVariant().getReservedQuantity()) throw new BadRequestException("Không đủ hàng trong kho");
             item.setQuantity(quantity);
-            cartItemRepository.save(item);
         }
-
-        return getCart(userId);
+        return response(cart);
     }
-
-    @Transactional
     public void removeItem(String userId, String variantId) {
-        Cart cart = cartRepository.findByUserId(userId).orElseThrow();
-        cartItemRepository.findByCartIdAndVariantId(cart.getId(), variantId)
-                .ifPresent(cartItemRepository::delete);
+        Cart cart = cart(userId);
+        items.findByCartIdAndVariantId(cart.getId(), variantId).ifPresent(item -> { cart.getItems().remove(item); items.delete(item); });
     }
-
-    private CartResponse toResponse(Cart cart) {
-        CartResponse r = new CartResponse();
-        r.setId(cart.getId());
-        r.setUserId(cart.getUserId());
-        if (cart.getItems() != null) {
-            r.setItems(cart.getItems().stream().map(this::toItemResponse).collect(Collectors.toList()));
+    private CartResponse response(Cart cart) {
+        CartResponse r = new CartResponse(); r.setId(cart.getId()); r.setUserId(cart.getUserId());
+        var responseItems = new ArrayList<CartItemResponse>();
+        BigDecimal subtotal = BigDecimal.ZERO; int count = 0;
+        for (CartItem item : cart.getItems()) {
+            CartItemResponse row = new CartItemResponse(); row.setId(item.getId()); row.setVariantId(item.getVariantId()); row.setQuantity(item.getQuantity());
+            row.setVariant(products.toVariantResponse(item.getVariant())); responseItems.add(row);
+            subtotal = subtotal.add(item.getVariant().getPrice().multiply(BigDecimal.valueOf(item.getQuantity()))); count += item.getQuantity();
         }
-        return r;
-    }
-
-    private CartItemResponse toItemResponse(CartItem item) {
-        CartItemResponse r = new CartItemResponse();
-        r.setId(item.getId());
-        r.setVariantId(item.getVariantId());
-        r.setQuantity(item.getQuantity());
-
-        ProductVariant v = item.getVariant();
-        if (v != null) {
-            ProductVariantResponse vr = new ProductVariantResponse();
-            vr.setId(v.getId());
-            vr.setSku(v.getSku());
-            vr.setColor(v.getColor());
-            vr.setSize(v.getSize());
-            vr.setOptions(v.getOptions());
-            vr.setPrice(v.getPrice());
-            vr.setPriceBeforeDiscount(v.getPriceBeforeDiscount());
-            vr.setStockQuantity(v.getStockQuantity());
-            vr.setImageUrl(v.getImageUrl());
-            r.setVariant(vr);
-        }
-        return r;
+        r.setItems(responseItems); r.setSubtotal(subtotal); r.setTotalItems(count); return r;
     }
 }

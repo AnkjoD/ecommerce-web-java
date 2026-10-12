@@ -4,6 +4,7 @@ import com.ankkun.ecommerce.common.dto.ApiResponse;
 import com.ankkun.ecommerce.module.address.dto.CreateAddressDto;
 import com.ankkun.ecommerce.module.address.service.AddressService;
 import jakarta.validation.Valid;
+import com.ankkun.ecommerce.module.address.dto.AddressResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,20 +20,25 @@ public class AddressController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<?>> getAll(@AuthenticationPrincipal String userId) {
-        return ResponseEntity.ok(ApiResponse.ok(addressService.findAll(userId)));
+        return ResponseEntity.ok(ApiResponse.ok(addressService.findAll(userId).stream().map(AddressResponse::from).toList()));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<?>> getOne(@PathVariable String id, @AuthenticationPrincipal String userId) {
+        return ResponseEntity.ok(ApiResponse.ok(AddressResponse.from(addressService.findOne(id, userId))));
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<?>> create(@AuthenticationPrincipal String userId,
                                                   @Valid @RequestBody CreateAddressDto dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(addressService.create(userId, dto)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(AddressResponse.from(addressService.create(userId, dto))));
     }
 
-    @PutMapping("/{id}")
+    @RequestMapping(value = "/{id}", method = {RequestMethod.PUT, RequestMethod.PATCH})
     public ResponseEntity<ApiResponse<?>> update(@PathVariable String id,
                                                   @AuthenticationPrincipal String userId,
                                                   @RequestBody CreateAddressDto dto) {
-        return ResponseEntity.ok(ApiResponse.ok(addressService.update(id, userId, dto)));
+        return ResponseEntity.ok(ApiResponse.ok(AddressResponse.from(addressService.update(id, userId, dto))));
     }
 
     @DeleteMapping("/{id}")
@@ -45,6 +51,6 @@ public class AddressController {
     @PatchMapping("/{id}/default")
     public ResponseEntity<ApiResponse<?>> setDefault(@PathVariable String id,
                                                       @AuthenticationPrincipal String userId) {
-        return ResponseEntity.ok(ApiResponse.ok(addressService.setDefault(id, userId)));
+        return ResponseEntity.ok(ApiResponse.ok(AddressResponse.from(addressService.setDefault(id, userId))));
     }
 }

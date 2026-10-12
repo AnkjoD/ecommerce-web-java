@@ -29,6 +29,10 @@ public class User {
 
     @Column(name = "full_name", nullable = false)
     private String fullName;
+    private String avatar;
+    private java.time.LocalDate dateOfBirth;
+    private String gender;
+    @Column(nullable=false,columnDefinition="integer default 0") @Builder.Default private Integer tokenVersion=0;
 
     @Column(unique = true, nullable = false)
     private String email;

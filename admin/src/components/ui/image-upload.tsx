@@ -33,8 +33,9 @@ export default function ImageUpload({ bucket = 'product-images', folder = 'produ
       
       const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/upload?folder=${folder}`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+          'X-Client-App': 'admin'
         },
         body: formData
       });

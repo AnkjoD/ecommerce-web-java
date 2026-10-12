@@ -1,0 +1,4 @@
+// Keep demo build outputs separate from IDE-managed Java classes on Windows.
+allprojects {
+    layout.buildDirectory = file('build/demo')
+}

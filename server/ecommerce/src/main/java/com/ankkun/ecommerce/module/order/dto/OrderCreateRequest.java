@@ -13,4 +13,9 @@ public class OrderCreateRequest {
     @NotBlank
     @JsonProperty("payment_method")
     private String paymentMethod;
+    @JsonProperty("coupon_code")
+    private String couponCode;
+    @JsonProperty("item_ids")
+    @jakarta.validation.constraints.Size(min=1, max=100)
+    private java.util.List<@jakarta.validation.constraints.NotBlank String> itemIds;
 }

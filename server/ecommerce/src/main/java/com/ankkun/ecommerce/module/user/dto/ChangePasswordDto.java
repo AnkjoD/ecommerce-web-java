@@ -8,6 +8,7 @@ import lombok.Data;
 @Data
 public class ChangePasswordDto {
     @NotBlank
+    @com.fasterxml.jackson.annotation.JsonAlias("password")
     @JsonProperty("current_password")
     private String currentPassword;
 

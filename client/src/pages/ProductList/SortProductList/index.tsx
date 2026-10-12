@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Box, Paper, Button, Typography, Stack, IconButton, MenuItem, Select, type SelectChangeEvent } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles'; // 🎨 Hook Theme
 
@@ -8,7 +7,6 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import useQueryParams from '~/hooks/useQueryParams';
 
 const HEIGHT = '34px'; 
-const BORDER_RADIUS = 1; // Dùng spacing theme (thường là 4px)
 
 import TuneIcon from '@mui/icons-material/Tune'
 import SwapVertIcon from '@mui/icons-material/SwapVert'

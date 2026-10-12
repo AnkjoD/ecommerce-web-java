@@ -9,7 +9,6 @@ public class CategoryCreateDto {
     @NotBlank
     private String name;
     
-    @NotBlank
     private String slug;
     
     @JsonProperty("parent_id")

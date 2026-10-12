@@ -26,9 +26,12 @@ public class ChatService {
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
+    private final DemoChatService demoChat;
+    @org.springframework.beans.factory.annotation.Value("${app.demo-mode:false}")private boolean demo;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public Object chatCompletion(String userId, String message, List<Object> chatHistory) {
+        if(demo)return demoChat.reply(userId,message);
         try {
             var body = objectMapper.writeValueAsString(Map.of(
                     "message", message,
@@ -45,6 +48,7 @@ public class ChatService {
                     .build();
 
             var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if(response.statusCode()>=400)throw new IllegalStateException("Sidecar request failed");
             return objectMapper.readValue(response.body(), Object.class);
 
         } catch (Exception e) {

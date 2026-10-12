@@ -32,6 +32,7 @@ import {
 import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import addressApi from '~/apis/address.api'
+import paymentApi from '~/apis/payment.api'
 import couponApi from '~/apis/coupon.api'
 import { toast } from 'react-toastify'
 import AppButton from '~/components/AppButton'
@@ -50,7 +51,7 @@ export default function CheckoutModal({ open, onClose, onConfirm, loading, total
   const theme = useTheme()
   const navigate = useNavigate()
   const [selectedAddress, setSelectedAddress] = useState<string>('')
-  const [paymentMethod, setPaymentMethod] = useState<string>('vnpay')
+  const [paymentMethod, setPaymentMethod] = useState<string>('cod')
   const [saveCard, setSaveCard] = useState<boolean>(false)
 
   const { data: addressesRes, isLoading } = useQuery({
@@ -58,6 +59,9 @@ export default function CheckoutModal({ open, onClose, onConfirm, loading, total
     queryFn: () => addressApi.getAddresses(),
     enabled: open
   })
+
+  const { data: paymentConfig } = useQuery({ queryKey: ['payment-config'], queryFn: paymentApi.getConfig, enabled: open })
+  const vnpayEnabled = paymentConfig?.data.data.vnpay === true
 
   // 🚀 FETCH ACTIVE COUPONS FOR SELECTION
   const { data: couponsRes } = useQuery({
@@ -240,15 +244,16 @@ export default function CheckoutModal({ open, onClose, onConfirm, loading, total
                     bgcolor: paymentMethod === 'vnpay' ? alpha(theme.palette.primary.main, 0.05) : 'transparent',
                     transition: '0.3s'
                   }}
-                  onClick={() => setPaymentMethod('vnpay')}
+                  onClick={() => vnpayEnabled && setPaymentMethod('vnpay')}
                 >
                   <FormControlLabel
+                    disabled={!vnpayEnabled}
                     value='vnpay'
                     control={<Radio size='small' />}
                     label={
                       <Box>
                         <Box component='img' src='/assets/vnpay-logo.jpg' sx={{ height: 24, mb: 1, mx: 'auto' }} />
-                        <Typography variant='caption' fontWeight={900} sx={{ display: 'block', letterSpacing: 1 }}>VNPAY-QR</Typography>
+                        <Typography variant='caption' fontWeight={900} sx={{ display: 'block', letterSpacing: 1 }}>{vnpayEnabled ? 'VNPAY-QR' : 'VNPAY CHƯA KHẢ DỤNG'}</Typography>
                       </Box>
                     }
                     labelPlacement='bottom'
@@ -280,6 +285,8 @@ export default function CheckoutModal({ open, onClose, onConfirm, loading, total
                 </Paper>
               </Stack>
             </RadioGroup>
+            {paymentConfig?.data.data.momo && <FormControlLabel control={<Radio checked={paymentMethod==='momo'} onChange={()=>setPaymentMethod('momo')} />} label="MoMo (demo local)"/>}
+            {paymentMethod!=='cod' && paymentConfig?.data.data.mode==='demo' && <FormControlLabel control={<Checkbox checked={saveCard} onChange={e=>setSaveCard(e.target.checked)} />} label="Lưu phương thức mô phỏng (không lưu thẻ thật)"/>}
           </Box>
 
           <Divider sx={{ borderStyle: 'dashed', opacity: 0.5 }} />

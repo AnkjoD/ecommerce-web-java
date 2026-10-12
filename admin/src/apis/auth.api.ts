@@ -3,7 +3,7 @@ import { AuthResponse, SuccessResponseApi, AuthUser } from "../types/auth";
 
 const authApi = {
   login: (body: any) => {
-    return http.post<AuthResponse>("/auth/admin-login-9472", body);
+    return http.post<AuthUser>("/auth/admin/login", body);
   },
   logout: () => {
     return http.post<SuccessResponseApi<boolean>>("/auth/logout");

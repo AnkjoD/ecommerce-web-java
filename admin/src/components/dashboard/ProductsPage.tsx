@@ -113,7 +113,8 @@ export default function ProductsPage() {
     updateMetadata.mutate({ 
       id: editingProduct.id, 
       data: { 
-        ...form, 
+        ...form,
+        variants: form.variants.map(v => ({ ...v, price: Number(v.price), stock_quantity: Number(v.stock), weight: Number(v.weight) || 500, price_before_discount: v.price_before_discount ? Number(v.price_before_discount) : null })),
         description: { text: form.description },
         media: { icon: form.icon, thumbnail: form.imageUrl || undefined }
       } 
@@ -142,7 +143,7 @@ export default function ProductsPage() {
       primary_variant_id: product.primary_variant_id || null,
       attribute_order: product.attribute_order || [],
       variants: product.variants?.map((v: any) => ({
-        id: v.id, sku: v.sku, price: String(v.price), stock: String(v.stock_quantity), options: v.options || {}, image_url: v.image_url || ''
+        id: v.id, sku: v.sku, price: String(v.price), stock: String(v.stock_quantity), weight: String(v.weight || 500), price_before_discount: v.price_before_discount == null ? '' : String(v.price_before_discount), options: v.options || {}, image_url: v.image_url || ''
       })) || []
     });
     setEditOpen(true);

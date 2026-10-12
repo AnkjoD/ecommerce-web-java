@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Box, Typography, Button, Avatar, alpha, Stack, Chip, Divider, Tooltip } from '@mui/material'
+import { Box, Typography, Button, Avatar, alpha, Stack, Chip, Tooltip } from '@mui/material'
 import { purchaseStatus } from '~/constants/purchase'
 import type { Order, OrderItem } from '~/types/purchase.type'
 import useAddToCart from '~/hooks/useAddToCart'
@@ -17,6 +17,10 @@ import {
   Article
 } from '@mui/icons-material'
 import ReviewModal from '../ReviewModal'
+import http from '~/utils/http'
+import paymentApi from '~/apis/payment.api'
+import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'react-toastify'
 
 interface Props {
   order: Order
@@ -97,7 +101,25 @@ const PurchaseBox = ({ order }: Props) => {
   const [selectedItem, setSelectedItem] = useState<OrderItem | null>(null)
   const config = getStatusConfig(order.status)
 
-  const isVnpay = order.payment_method === 'vnpay'
+  const queryClient = useQueryClient()
+  const [busy, setBusy] = useState(false)
+  const act = async (retry: boolean) => {
+    setBusy(true)
+    try {
+      if (retry) {
+        const res = order.payment_method === 'momo' ? await paymentApi.createMomoUrl(order.id) : await paymentApi.createVnPayUrl(order.id)
+        const data = res.data.data
+        window.location.assign(typeof data === 'string' ? data : data.url)
+      } else {
+        await http.post(`/orders/${order.id}/cancel`)
+        await queryClient.invalidateQueries()
+        toast.success('Đã hủy đơn và trả lại tồn kho')
+      }
+    } catch { toast.error('Không thể cập nhật đơn hàng lúc này') } finally { setBusy(false) }
+  }
+  const canCancel = ['pending', 'confirmed', 'payment_failed'].includes(order.status) && order.payment_status !== 'paid'
+  const canPay = ['pending', 'payment_failed'].includes(order.status) && order.payment_status !== 'paid' && order.payment_method !== 'cod'
+  const isOnline = order.payment_method !== 'cod'
 
   const handleBuyAgain = (item: OrderItem) => {
     addToCart({ variant_id: item.variant_id, quantity: item.quantity })
@@ -153,10 +175,10 @@ const PurchaseBox = ({ order }: Props) => {
         </Stack>
 
         <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title={isVnpay ? 'Đã thanh toán qua VNPAY' : 'Thanh toán khi nhận hàng'}>
+          <Tooltip title={order.payment_status === 'paid' ? 'Đã thanh toán' : order.payment_status === 'refunded' ? 'Đã hoàn tiền' : 'Chưa thanh toán'}>
             <Chip 
-              icon={isVnpay ? <CreditCard /> : <Payments />}
-              label={isVnpay ? 'VNPAY' : 'COD'}
+              icon={isOnline ? <CreditCard /> : <Payments />}
+              label={order.payment_method.toUpperCase()}
               size="small"
               sx={{ 
                 height: 28,
@@ -222,7 +244,7 @@ const PurchaseBox = ({ order }: Props) => {
                   {item.product_name}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" fontWeight={650} sx={{ mb: 1.5, opacity: 0.7 }}>
-                  {item.variant_info}
+                  {Object.entries(item.variant?.options || {}).map(([k, v]) => `${k}: ${v}`).join(' · ')}
                 </Typography>
                 <Typography variant="subtitle2" color="primary.main" fontWeight={1000} sx={{ fontSize: '1.1rem' }}>
                   ₫{item.unit_price.toLocaleString()}
@@ -291,6 +313,7 @@ const PurchaseBox = ({ order }: Props) => {
         </Box>
       </Box>
 
+      <Stack direction="row" spacing={2} sx={{ mt: 2 }}>{canCancel && <Button disabled={busy} color="error" onClick={() => act(false)}>Hủy đơn hàng</Button>}{canPay && <Button disabled={busy} variant="contained" onClick={() => act(true)}>Thanh toán demo / thử lại</Button>}</Stack>
       {selectedItem && (
         <ReviewModal 
           open={openReview} 

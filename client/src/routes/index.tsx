@@ -22,6 +22,8 @@ const AddressList = lazy(() => import('~/pages/AddressList'))
 const Purchase = lazy(() => import('~/pages/Purchase'))
 const NotFound = lazy(() => import('~/pages/NotFound'))
 const PaymentResult = lazy(() => import('~/pages/PaymentResult'))
+const DemoPayment = lazy(() => import('~/pages/DemoPayment'))
+const Support = lazy(() => import('~/pages/Support'))
 
 
 const router = createBrowserRouter([
@@ -109,6 +111,10 @@ const router = createBrowserRouter([
                         )
                     },
                     {
+                        path: "/payment-demo/:id",
+                        element: <Suspense><DemoPayment /></Suspense>
+                    },
+                    {
                         path: path.paymentResult,
                         element: (
                             <Suspense>
@@ -125,6 +131,10 @@ const router = createBrowserRouter([
         path: '',
         Component: MainLayout,
         children: [
+            {
+                path: "/support",
+                element: <Suspense><Support /></Suspense>
+            },
             {
                 index: true,
                 element: (

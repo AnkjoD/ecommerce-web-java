@@ -68,19 +68,19 @@ export default function Footer() {
             {
               title: 'HỖ TRỢ',
               links: [
-                { label: 'Trung tâm trợ giúp', to: '#' },
-                { label: 'Chính sách bảo mật', to: '#' },
-                { label: 'Điều khoản sử dụng', to: '#' },
-                { label: 'Liên hệ chúng tôi', to: '#' },
+                { label: 'Trung tâm trợ giúp', to: '/support#help' },
+                { label: 'Chính sách bảo mật', to: '/support#privacy' },
+                { label: 'Điều khoản sử dụng', to: '/support#terms' },
+                { label: 'Liên hệ chúng tôi', to: '/support#contact' },
               ]
             },
             {
               title: 'TÀI KHOẢN',
               links: [
-                { label: 'Hồ sơ cá nhân', to: '/profile' },
-                { label: 'Lịch sử mua hàng', to: '/purchase' },
+                { label: 'Hồ sơ cá nhân', to: '/user/profile' },
+                { label: 'Lịch sử mua hàng', to: '/user/purchase' },
                 { label: 'Giỏ hàng', to: '/cart' },
-                { label: 'Đổi mật khẩu', to: '/profile/password' },
+                { label: 'Đổi mật khẩu', to: '/user/change-password' },
               ]
             }
           ].map((section, idx) => (

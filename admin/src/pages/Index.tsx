@@ -8,9 +8,10 @@ import OrdersPage from '@/components/dashboard/OrdersPage';
 import ReviewsPage from '@/components/dashboard/ReviewsPage';
 import UsersPage from '@/components/dashboard/UsersPage';
 import AuditLogsPage from '@/components/dashboard/AuditLogsPage';
+import OutboxPage from '@/components/dashboard/OutboxPage';
 import { useAuth } from '@/hooks/use-auth';
 
-type Page = 'overview' | 'products' | 'categories' | 'coupons' | 'orders' | 'reviews' | 'users' | 'audit-logs';
+type Page = 'overview' | 'products' | 'categories' | 'coupons' | 'orders' | 'reviews' | 'users' | 'audit-logs' | 'outbox';
 
 export default function Index() {
   const [currentPage, setCurrentPage] = useState<Page>('overview');
@@ -26,6 +27,7 @@ export default function Index() {
       case 'reviews': return <ReviewsPage />;
       case 'users': return <UsersPage />;
       case 'audit-logs': return <AuditLogsPage />;
+      case 'outbox': return <OutboxPage />;
     }
   };
 

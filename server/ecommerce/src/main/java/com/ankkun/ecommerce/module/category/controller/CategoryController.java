@@ -16,7 +16,7 @@ public class CategoryController {
 
     private final CategoryService categoryService;
 
-    @GetMapping("/api/categories")
+    @GetMapping({"/api/categories", "/api/categories/tree"})
     public ResponseEntity<ApiResponse<?>> getAll() {
         return ResponseEntity.ok(ApiResponse.ok(categoryService.findAll()));
     }
@@ -26,6 +26,8 @@ public class CategoryController {
         return ResponseEntity.ok(ApiResponse.ok(categoryService.findBySlug(slug)));
     }
 
+    @GetMapping("/api/admin/categories") public Object adminList(){return ApiResponse.ok(categoryService.adminList());}
+
     @PostMapping("/api/admin/categories")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<?>> create(@Valid @RequestBody CategoryCreateDto dto) {
@@ -34,7 +36,7 @@ public class CategoryController {
 
     @PatchMapping("/api/admin/categories/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<?>> update(@PathVariable String id, @RequestBody CategoryUpdateDto dto) {
+    public ResponseEntity<ApiResponse<?>> update(@PathVariable String id, @Valid @RequestBody CategoryUpdateDto dto) {
         return ResponseEntity.ok(ApiResponse.ok(categoryService.update(id, dto)));
     }
 

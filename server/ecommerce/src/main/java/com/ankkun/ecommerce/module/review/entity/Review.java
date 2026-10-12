@@ -35,7 +35,9 @@ public class Review {
     @Column(nullable = false)
     private Integer rating;
 
-    private String comment;
+    @Column(length=4000) private String comment;
+    @Column(length=4000) private String adminReply;
+    private Instant adminReplyAt;
 
     @Column(name = "is_verified", nullable = false)
     @Builder.Default

@@ -111,7 +111,7 @@ export function useSyncProducts() {
     mutationFn: () => productsApi.syncAll(),
     onSuccess: (res: any) => {
       qc.invalidateQueries({ queryKey: ['admin-products'] });
-      toast.success(res.data.message || 'Đồng bộ dữ liệu thành công');
+      toast.success(res.message || 'Đồng bộ dữ liệu thành công');
     },
     onError: (error: any) => toast.error(error.message || 'Lỗi khi đồng bộ dữ liệu'),
   });

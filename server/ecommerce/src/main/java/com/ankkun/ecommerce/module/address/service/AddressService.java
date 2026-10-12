@@ -15,6 +15,8 @@ import java.util.List;
 public class AddressService {
 
     private final AddressRepository addressRepository;
+    private final com.ankkun.ecommerce.module.order.repository.OrderRepository orders;
+    private final com.ankkun.ecommerce.module.user.repository.UserRepository users;
 
     public List<Address> findAll(String userId) {
         return addressRepository.findByUserIdOrderByIsDefaultDesc(userId);
@@ -27,6 +29,7 @@ public class AddressService {
 
     @Transactional
     public Address create(String userId, CreateAddressDto dto) {
+        users.findLocked(userId).orElseThrow();
         long count = addressRepository.countByUserId(userId);
         boolean isDefault = count == 0 || Boolean.TRUE.equals(dto.getIs_default());
 
@@ -49,6 +52,7 @@ public class AddressService {
 
     @Transactional
     public Address update(String id, String userId, CreateAddressDto dto) {
+        users.findLocked(userId).orElseThrow();
         Address address = findOne(id, userId);
 
         if (Boolean.TRUE.equals(dto.getIs_default())) {
@@ -66,7 +70,9 @@ public class AddressService {
 
     @Transactional
     public void remove(String id, String userId) {
+        users.findLocked(userId).orElseThrow();
         Address address = findOne(id, userId);
+        if(orders.existsByAddressId(id))throw new com.ankkun.ecommerce.common.exception.BadRequestException("Địa chỉ đã được dùng cho đơn hàng; bạn có thể thêm địa chỉ mới");
         addressRepository.delete(address);
 
         if (Boolean.TRUE.equals(address.getIsDefault())) {
@@ -81,6 +87,7 @@ public class AddressService {
 
     @Transactional
     public Address setDefault(String id, String userId) {
+        users.findLocked(userId).orElseThrow();
         Address address = findOne(id, userId);
         addressRepository.clearDefault(userId);
         address.setIsDefault(true);

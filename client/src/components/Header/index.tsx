@@ -5,26 +5,22 @@ import Button from '@mui/material/Button'
 import Container from '@mui/material/Container'
 import IconButton from '@mui/material/IconButton'
 import Toolbar from '@mui/material/Toolbar'
-import Typography from '@mui/material/Typography'
 import Badge from '@mui/material/Badge'
 
 // Các icon giữ chỗ
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined'
-import { AppTooltip } from '~/components/AppTooltip'
 import AccountMenu from './AccountMenu'
 import Logo from '../Logo'
 import { useNavigate } from 'react-router'
 import purchaseApi from '~/apis/purchase.api'
 import { purchaseStatus } from '~/constants/purchase'
 import { useQuery } from '@tanstack/react-query'
-import formatCurrency from '~/utils/formatCurrency'
 import useUserProfile from '~/hooks/useUserProfile'
 import { type User } from '~/types/user.type'
 import path from '~/constants/path'
 import { AppContext } from '~/contexts/app.context'
 import { useContext, useEffect, useState } from 'react'
 import SearchInput from './SearchInput'
-import { alpha } from '@mui/material/styles'
 import ThemeToggleBtn from '../ThemeToggleBtn'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -39,7 +35,7 @@ export default function Header() {
     queryKey: ['purchases', { status: purchaseStatus.inCart }],
     queryFn: () => {
       if (isAuthenticated) {
-        return purchaseApi.getPurchases({ status: purchaseStatus.inCart })
+        return purchaseApi.getPurchases()
       }
     },
     enabled: isAuthenticated,
@@ -48,7 +44,6 @@ export default function Header() {
 
   // Bóc tách cart từ response
   const cart = purchaseData?.data?.data
-  const cartItems = cart?.items || []
 
   const { profile }: { profile: User | null } = useUserProfile()
 
@@ -60,12 +55,7 @@ export default function Header() {
     }
   }, [cart?.total_items])
 
-  // Khi có hiệu ứng Bump (Sản phẩm chạm giỏ), tăng số hiển thị ngay lập tức (không đợi Server)
-  useEffect(() => {
-    if (cartBumpCount > 0) {
-      setDisplayCount(prev => prev + 1)
-    }
-  }, [cartBumpCount])
+
 
   return (
     <AppBar

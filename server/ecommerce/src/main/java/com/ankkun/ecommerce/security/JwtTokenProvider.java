@@ -10,7 +10,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Component
+@lombok.RequiredArgsConstructor
 public class JwtTokenProvider {
+    private final com.ankkun.ecommerce.module.user.repository.UserRepository users;
 
     @Value("${jwt.access-secret}")
     private String accessSecret;
@@ -34,9 +36,11 @@ public class JwtTokenProvider {
 
     public String generateAccessToken(String userId, String email, String role) {
         return Jwts.builder()
+                .id(java.util.UUID.randomUUID().toString())
                 .subject(userId)
                 .claim("email", email)
                 .claim("role", role)
+                .claim("ver",users.findById(userId).orElseThrow().getTokenVersion())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + accessExpirationMs))
                 .signWith(accessKey())
@@ -45,9 +49,11 @@ public class JwtTokenProvider {
 
     public String generateRefreshToken(String userId, String email, String role) {
         return Jwts.builder()
+                .id(java.util.UUID.randomUUID().toString())
                 .subject(userId)
                 .claim("email", email)
                 .claim("role", role)
+                .claim("ver",users.findById(userId).orElseThrow().getTokenVersion())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + refreshExpirationMs))
                 .signWith(refreshKey())

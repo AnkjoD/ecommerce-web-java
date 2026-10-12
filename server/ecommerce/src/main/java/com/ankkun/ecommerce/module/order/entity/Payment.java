@@ -1,6 +1,8 @@
 package com.ankkun.ecommerce.module.order.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -28,6 +30,9 @@ public class Payment {
 
     @Column(name = "transaction_id")
     private String transactionId;
+    private String nonceHash;
+    private Instant nonceExpiresAt;
+    private Boolean saveMethod;
 
     @Column(name = "provider_order_id")
     private String providerOrderId;
@@ -39,6 +44,7 @@ public class Payment {
     @Builder.Default
     private String status = "pending";
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "raw_response", columnDefinition = "jsonb")
     private String rawResponse;
 

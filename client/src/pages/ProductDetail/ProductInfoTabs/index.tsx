@@ -14,7 +14,6 @@ import {
   Chip as Badge
 } from '@mui/material';
 import { 
-  CheckCircle as CheckCircleIcon,
   Reply as ReplyIcon,
   VerifiedUser as VerifiedUserIcon,
   AutoAwesome as AutoAwesomeIcon,
@@ -22,12 +21,10 @@ import {
   Star as StarIcon
 } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
-import { useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { AppContext } from '~/contexts/app.context';
-import path from '~/constants/path';
 import type { Product } from '~/types/product.type';
 import reviewApi from '~/apis/review.api';
 import SafeHtml from '~/components/SafeHtml';
@@ -64,8 +61,7 @@ function TabPanel(props: TabPanelProps) {
 
 export default function ProductInfoTabs({ product }: Props) {
   const theme = useTheme();
-  const navigate = useNavigate();
-  const { isAuthenticated } = useContext(AppContext);
+  useContext(AppContext);
   const [value, setValue] = useState(0);
   const [filterRating, setFilterRating] = useState<number | 'all'>('all');
 
@@ -301,9 +297,8 @@ export default function ProductInfoTabs({ product }: Props) {
                                                 bgcolor: 'emerald.500/10', color: 'emerald.600', border: 'none', 
                                                 fontSize: '0.65rem', fontWeight: 900, px: 1, py: 0.5, borderRadius: 1 
                                               }}
-                                           >
-                                              CHÍNH CHỦ
-                                           </Badge>
+                                              label="CHÍNH CHỦ"
+                                           />
                                        )}
                                     </Stack>
                                     <Typography variant="caption" color="text.disabled" fontWeight={800} sx={{ letterSpacing: 1 }}>

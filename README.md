@@ -1,201 +1,187 @@
-# Homura Shop — AI Chatbot Sidecar
+# Homura Shop — Java E-commerce
 
-Service FastAPI độc lập xử lý ngôn ngữ tự nhiên, phân loại ý định và tìm kiếm sản phẩm cho Homura Shop bằng Agentic RAG.
+Ứng dụng thương mại điện tử chuyển backend từ NestJS/Prisma sang **Java 21 và Spring Boot**, gồm website khách hàng, trang quản trị và REST API với PostgreSQL.
 
-## Tech Stack
+Hướng dẫn mặc định chạy **demo local**. VNPay, MoMo, vận chuyển và email được mô phỏng trong máy; trợ lý sản phẩm tìm trong danh mục local, không gọi mô hình AI. Không cần khóa dịch vụ ngoài hoặc thanh toán thật.
 
-| Thành phần       | Công nghệ                                       |
-| ---------------- | ----------------------------------------------- |
-| Framework        | FastAPI + Uvicorn + Python 3.13                 |
-| LLM Router       | Google Gemini 2.0 Flash API                     |
-| LLM Generate     | Ollama qwen2.5:7b (local)                       |
-| Embedding        | `BAAI/bge-m3` (HuggingFace, local)              |
-| Reranker         | `BAAI/bge-reranker-v2-m3` (CrossEncoder, local) |
-| Vector Search    | PostgreSQL + pgvector (cosine similarity)       |
-| Full-text Search | PostgreSQL FTS (plainto_tsquery)                |
-| ORM              | SQLAlchemy → PostgreSQL                         |
-| Cache            | Redis                                           |
+## Công nghệ
 
-## Kiến trúc Pipeline
+| Thành phần | Công nghệ |
+| --- | --- |
+| Backend | Java 21, Spring Boot 3.3.5, Spring Security, Spring Data JPA, Bean Validation |
+| Database | PostgreSQL; JSONB cho metadata sản phẩm và dữ liệu đơn |
+| Xác thực | JWT, cookie HttpOnly, BCrypt, refresh token lưu hash và xoay vòng |
+| Website khách hàng | React 19, TypeScript, Vite, Material UI, TanStack Query |
+| Trang quản trị | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, Recharts |
+| Công cụ | Gradle Wrapper, Docker, PowerShell, JUnit 5, MockMvc |
+| Phần mở rộng | Python/FastAPI trong `ai/`; không khởi động trong demo local |
 
-```
-User Query (từ NestJS, kèm userId đã verify JWT)
-        │
-        ▼
-┌─────────────────────────────────┐
-│  LLM Router — Gemini Flash      │  ~300-500ms
-│  - Classify intent (6 loại)     │
-│  - Extract filters              │
-│    (brand, color, size, price)  │
-│  - Extract order_product_hint   │
-│  - Rewrite sai chính tả         │
-│    (chỉ khi cần)                │
-└─────────────────────────────────┘
-        │
-        ├── ORDER_INQUIRY
-        │       └── SQL query orders WHERE user_id = :userId
-        │           Tự phân biệt theo nội dung:
-        │           - Có số đơn → WHERE id = :order_id
-        │           - Có tên SP → JOIN order_items, ưu tiên đơn active
-        │           - Không có gì → 5 đơn gần nhất
-        │           → Template format response (~50ms, không LLM)
-        │
-        ├── COUPON_INQUIRY
-        │       └── SQL query coupons
-        │           → Template format response (~50ms, không LLM)
-        │
-        ├── CHITCHAT
-        │       └── Template response thân thiện (~5ms, không LLM)
-        │
-        ├── OFFTOPIC
-        │       └── Template response redirect về sản phẩm (~5ms, không LLM)
-        │
-        ├── NEED_CLARIFICATION
-        │       └── Hỏi lại user (~5ms, không LLM)
-        │
-        └── PRODUCT_SEARCH
-                │
-                ▼
-        ┌───────────────────────────┐
-        │  Hybrid Search            │  ~200-500ms
-        │  vector_search()          │
-        │  + fts_search()           │
-        │  Filters → SQL WHERE      │
-        │  RRF merge                │
-        └───────────────────────────┘
-                │
-                ▼
-        ┌───────────────────────────┐
-        │  CrossEncoder Reranker    │  ~100-300ms
-        │  BAAI/bge-reranker-v2-m3  │
-        └───────────────────────────┘
-                │
-                ▼
-        ┌───────────────────────────┐
-        │  LLM Generate             │  ~1-3s
-        │  Ollama qwen2.5:7b        │
-        │  Tư vấn dựa trên context  │
-        └───────────────────────────┘
-                │
-                ▼
-        Response to User
+## Chạy nhanh trên Windows
+
+Cần **JDK 21**, **Node.js/npm** và **Docker Desktop đang chạy**. Máy kiểm chứng dùng Node.js 24. Lần cài đầu cần Internet để tải dependency/image; luồng demo không gọi dịch vụ bên ngoài.
+
+Mở PowerShell tại thư mục dự án:
+
+```powershell
+cd client
+npm ci
+cd ../admin
+npm ci
+cd ..
+./scripts/start-demo.ps1
 ```
 
-## Tại sao tách Router và Generate
+| Trang | Địa chỉ |
+| --- | --- |
+| Website khách hàng | http://localhost:3000 |
+| Trang quản trị | http://localhost:8081 |
+| Java API | http://127.0.0.1:6000/api |
+| PostgreSQL demo | `127.0.0.1:55432`, database `ecommerce_demo` |
 
-Router dùng Gemini Flash vì đây là điểm fail đầu tiên của pipeline — nếu classify sai intent hoặc extract sai brand/size thì toàn bộ retrieval sai theo. Gemini Flash chính xác tiếng Việt tốt hơn, chi phí ~$1/tháng, không đáng lo.
+| Vai trò | Email | Mật khẩu demo |
+| --- | --- | --- |
+| Khách hàng | `customer@homura.test` | `DemoCustomer123!` |
+| Quản trị viên | `admin@homura.test` | `DemoAdmin123!` |
 
-Generate dùng qwen2.5:7b local vì lúc này context sản phẩm đã được retrieval + reranker lọc sạch — LLM chỉ cần đọc và viết câu trả lời tự nhiên, 7b là đủ.
+Script dùng container riêng `ecommerce-java-demo-db`, không dùng database NestJS gốc. Profile `demo` tạo tài khoản, ba sản phẩm và coupon `DEMO10` khi chưa tồn tại. Khởi động lại giữ dữ liệu. Shop và admin có cookie riêng nên mở đồng thời được.
 
-## Intents được hỗ trợ (6 intents)
-
-| Intent             | Ví dụ                                                                          | Xử lý                               |
-| ------------------ | ------------------------------------------------------------------------------ | ----------------------------------- |
-| PRODUCT_SEARCH     | "tìm giày chạy bộ", "Nike AF1 còn size 42 không", "Adidas Samba giá bao nhiêu" | Hybrid search + LLM generate        |
-| ORDER_INQUIRY      | "đơn 1234 giao chưa", "cặp hàn quốc đến đâu rồi", "lịch sử mua hàng"           | SQL query + Template (không LLM)    |
-| COUPON_INQUIRY     | "có mã giảm giá không", "voucher nào dùng được"                                | SQL query + Template (không LLM)    |
-| CHITCHAT           | "xin chào shop", "cảm ơn bạn"                                                  | Template tĩnh, tone thân thiện      |
-| OFFTOPIC           | "thời tiết hôm nay", "viết code giúp t"                                        | Template tĩnh, redirect về sản phẩm |
-| NEED_CLARIFICATION | "mua gì đó đẹp", "cho t cái gì hay hay"                                        | Hỏi lại user                        |
-
-**Lý do gộp so với thiết kế cũ:**
-
-- STOCK_CHECK + PRICE_CHECK → PRODUCT_SEARCH: cả 3 đều đi qua hybrid_search(), LLM tự điều chỉnh câu trả lời theo context filters
-- ORDER_LOOKUP + ORDER_HISTORY → ORDER_INQUIRY: cùng 1 function xử lý, SQL tự phân biệt:
-  - Có số đơn → `WHERE id = :order_id`
-  - Có tên sản phẩm → `JOIN order_items` + ưu tiên đơn đang active (shipping/processing) trước delivered
-  - Không có gì → lấy 5 đơn gần nhất theo `created_at DESC`
-- CHITCHAT và OFFTOPIC **không gộp** vì tone response khác nhau — một cái mời tiếp tục, một cái redirect
-
-## Router Output
-
-```json
-{
-  "intent": "PRODUCT_SEARCH | ORDER_INQUIRY | COUPON_INQUIRY | CHITCHAT | OFFTOPIC | NEED_CLARIFICATION",
-  "query_rewritten": "câu hỏi đã sửa chính tả, tối đa 10 từ (giữ nguyên nếu đã ổn)",
-  "filters": {
-    "brand": null,
-    "color": null,
-    "size": null,
-    "max_price": null,
-    "sort": null
-  },
-  "order_id": null,
-  "order_product_hint": null,
-  "requires_auth": false,
-  "confidence": 0.0
-}
+```powershell
+# Dừng ứng dụng/container, giữ dữ liệu
+./scripts/stop-demo.ps1
+# Chạy lại nhanh sau khi đã build
+./scripts/start-demo.ps1 -SkipBuild
 ```
 
-## Cài đặt
+Log, ảnh upload và JAR chạy nằm trong `.demo/`, không đưa vào Git. Xem [RUNNING.md](RUNNING.md) để xử lý lỗi.
 
-### 1. Môi trường
+## Chức năng
 
-```bash
-conda create -n aiEnv python=3.13
-conda activate aiEnv
-pip install -r requirements.txt
+### Khách hàng
+
+- Đăng ký/đăng nhập, làm mới phiên, đăng xuất; sửa hồ sơ, ngày sinh, giới tính, avatar PNG/JPEG và đổi mật khẩu.
+- Xem danh mục, tìm kiếm/lọc/sắp xếp sản phẩm, chọn biến thể và xem tồn kho.
+- Quản lý địa chỉ và địa chỉ mặc định; bộ tỉnh/quận/phường demo có dữ liệu mẫu Hà Nội, Hồ Chí Minh, Đà Nẵng.
+- Giỏ hàng, thay đổi số lượng, chọn món cần mua, áp coupon và checkout.
+- COD hoặc VNPay/MoMo mô phỏng: chọn kết quả, thử lại, lưu/xóa phương thức demo. Không lưu số thẻ hay dữ liệu ngân hàng thật.
+- Lịch sử đơn theo trạng thái, hủy đơn chưa trả tiền ở trạng thái cho phép; mua lại và đánh giá sau khi nhận hàng.
+- Trợ lý local gợi ý sản phẩm còn hàng, liệt kê coupon và tra đơn của chính tài khoản đang đăng nhập.
+
+### Quản trị viên
+
+- Tạo/sửa/lưu trữ sản phẩm, metadata, biến thể, giá/tồn kho và ảnh local.
+- Quản lý danh mục, coupon và người dùng; khóa/mở tài khoản, tìm kiếm đơn/người dùng.
+- Chuyển trạng thái đơn; xác nhận thu tiền COD; mô phỏng hoàn tiền/trả hàng với tồn kho cập nhật một lần.
+- Xem, trả lời, kiểm duyệt và xóa đánh giá; cập nhật điểm trung bình từ đánh giá.
+- Doanh thu đã trả tiền, biểu đồ 30 ngày, trạng thái đơn, top sản phẩm/khách hàng và xuất CSV.
+- Nhật ký thao tác quản trị và hộp thư **Email demo** lưu trong PostgreSQL, không gửi SMTP.
+
+## Quy tắc nghiệp vụ
+
+Checkout lấy giá/coupon từ server, khóa người dùng và biến thể trong transaction, kiểm tra tồn rồi trừ tồn ngay khi tạo đơn. Hai giỏ có thể chứa món cuối nhưng chỉ đơn còn đủ tồn được tạo. Hủy/hoàn tiền trả tồn một lần. Coupon kiểm tra trạng thái, hạn dùng, giá trị tối thiểu và lượt sử dụng; lượt đã dùng không được trả lại khi hủy.
+
+Đơn giữ bản chụp địa chỉ khi đặt hàng. Địa chỉ đã được đơn tham chiếu không thể xóa; sửa địa chỉ không đổi thông tin giao hàng của đơn mới đã lưu snapshot.
+
+Ship mô phỏng: 20.000đ tại Hồ Chí Minh, 30.000đ tại Hà Nội/Đà Nẵng, 40.000đ nơi khác; miễn phí khi tổng sau giảm đạt 500.000đ.
+
+```text
+pending → confirmed → processing → shipping → delivered
 ```
 
-### 2. Biến môi trường
+Online phải trả tiền trước khi admin xử lý. Thất bại chuyển sang `payment_failed`, giữ hàng để thử lại/hủy. Phiên thanh toán hết hạn sau 15 phút: tạo lại hoặc hủy đơn; chưa có job tự động giải phóng hàng. Mã `DEMO-GHTK-*` và shipping log chỉ mô phỏng.
 
-File `.env` đặt ở thư mục cha (`Web-ban-hang/.env`):
+Hoàn tiền cho đơn đã trả tiền chưa gửi (`pending`, `confirmed`) hoặc đã giao (`delivered`, coi là đã nhận hàng trả về). Đơn sau hoàn tiền bị hủy, trả tồn kho và không còn được tính vào doanh thu đã trả tiền.
 
-```env
-# Bắt buộc
-DATABASE_URL=postgresql+psycopg://postgres:password@127.0.0.1:5432/web-ban-hang
-GEMINI_API_KEY=...          # cho LLM Router
+## Cấu trúc và kiến trúc
 
-# Ollama (generate)
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=qwen2.5:7b
-
-# Tuỳ chọn
-REDIS_URL=redis://localhost:6379
-WEBHOOK_SECRET=...
-RAG_TOP_K=5
-AI_CACHE_TTL=600
+```text
+ecommerce-web/
+├── client/                 Website khách hàng
+├── admin/                  Trang quản trị
+├── server/ecommerce/       Spring Boot
+│   └── src/main/java/com/ankkun/ecommerce/
+│       ├── common/         DTO, enum, lỗi
+│       ├── security/       JWT, cookie, phân quyền
+│       ├── config/         Seed demo, nhật ký
+│       └── module/         Auth, user, product, cart, order, payment...
+├── ai/                     Sidecar Python tùy chọn
+├── scripts/                Khởi động/dừng demo, smoke test
+├── README.md
+└── RUNNING.md
 ```
 
-### 3. Khởi chạy Ollama
+Frontend gọi `/api` qua Vite proxy tới Java port 6000. Backend đi theo controller → service → repository; JPA quản lý transaction/khóa dữ liệu. PostgreSQL lưu nghiệp vụ, refresh token, nhật ký và outbox. Ảnh ở `.demo/uploads/`, phục vụ qua `/api/files/...`.
 
-```bash
-ollama pull qwen2.5:7b
-ollama serve
+## API chính
+
+Response thường có dạng `{ success, message, data }`; phân trang có `data, page, limit, total, total_pages`. Trường JSON dùng `snake_case`. Upload sản phẩm admin trả trực tiếp `{ url }`.
+
+| Nhóm | Endpoint tiêu biểu |
+| --- | --- |
+| Xác thực | `POST /api/auth/register`, `/login`, `/admin/login`, `/refresh`, `/logout`; `GET /api/auth/me` |
+| Hồ sơ | `GET/PATCH /api/users/me`; `POST /api/users/me/avatar`, `/me/change-password` |
+| Danh mục/sản phẩm | `GET /api/categories`, `/products`, `/products/{variantId}`, `/products/{productId}/variants` |
+| Địa chỉ | `GET/POST /api/addresses`; `PATCH/DELETE /api/addresses/{id}`; `PATCH /{id}/default` |
+| Giỏ hàng | `GET /api/carts`; `POST /api/carts/items`; `PATCH/DELETE /api/carts/items/{id}` |
+| Đơn | `GET/POST /api/orders`; `GET /{id}`; `POST /{id}/cancel` |
+| Coupon | `GET /api/coupons/active`; `POST /validate`; admin CRUD `/api/coupons` |
+| Thanh toán demo | `POST /api/payments/create-url`, `/momo/create/{id}`; `GET /demo/{id}`; `POST /demo/{id}/complete`; `/methods` |
+| Đánh giá | `GET /api/reviews/product/{id}`; `POST /api/reviews`; `PATCH/DELETE /{id}` |
+| Trợ lý local | `POST /api/chat/completions` |
+| Admin | `/api/admin/products`, `/categories`, `/orders`, `/users`, `/reviews`, `/audit-logs`, `/mail/outbox`, `/stats/overview` |
+
+API kiểm tra quyền sở hữu địa chỉ, giỏ, đơn, đánh giá và phương thức thanh toán. Khách không truy cập API admin. DTO người dùng/địa chỉ không trả password hash hoặc refresh token.
+
+## Cấu hình
+
+Backend đọc **biến môi trường tiến trình**, không tự đọc `.env`. Script demo đặt profile/thông số local; Docker Compose có cấu hình riêng và không cần dùng cho hướng dẫn này.
+
+| Biến | Mục đích |
+| --- | --- |
+| `SPRING_PROFILES_ACTIVE=demo` | Seed và mô phỏng local |
+| `DATABASE_URL` | URL JDBC PostgreSQL, ví dụ `jdbc:postgresql://127.0.0.1:55432/ecommerce_demo` |
+| `DB_USERNAME`, `DB_PASSWORD` | Tài khoản database |
+| `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET` | Hai khóa JWT riêng |
+| `SERVER_PORT`, `SERVER_ADDRESS` | Demo dùng 6000/loopback |
+| `FRONTEND_URL`, `COOKIE_SECURE` | Origin và cookie HTTPS |
+| `VITE_PROXY_TARGET` | Backend cho Vite proxy |
+
+Trong profile demo, thanh toán đi vào mô phỏng dù máy có biến VNPay. Email chỉ ghi outbox, chat dùng local. Biến tích hợp cũ còn trong code để phát triển sau; có cấu hình không có nghĩa tích hợp thật đã được kiểm chứng.
+
+## Kiểm thử
+
+PostgreSQL demo cần chạy trước:
+
+```powershell
+# HTTP smoke test, demo đang chạy
+./scripts/smoke-test.ps1
+# Kiểm thử tính năng mở rộng và hai checkout đồng thời (cần Python 3)
+python scripts/smoke-features.py
+
+# Integration tests và đóng gói Java
+$env:DATABASE_URL='jdbc:postgresql://127.0.0.1:55432/ecommerce_demo'
+$env:DB_USERNAME='demo'
+$env:DB_PASSWORD='demo_local_only'
+cd server/ecommerce
+./gradlew.bat test bootJar --max-workers=1 -I ../../scripts/demo-build.gradle
+
+# Chạy riêng tại client/ và admin/
+npm run build
 ```
 
-### 4. Sync sản phẩm vào Vector DB
+**17 bài backend**: 8 `ShoppingFlowTests`, 8 `DemoFeaturesTests`, 1 `contextLoads`. Kiểm tra cookie/refresh/replay, quyền sở hữu, tồn kho/coupon, checkout món chọn, thanh toán thành công/thất bại/thử lại/hết hạn, phương thức lưu, hoàn tiền một lần, đánh giá sau nhận hàng, upload và thu hồi access token sau đổi mật khẩu.
 
-Chạy lần đầu hoặc khi có sản phẩm mới:
+Fixture integration rollback; file ảnh kiểm thử có thể còn trong thư mục upload. Smoke tạo dữ liệu giả trong database demo. Script smoke-features.py kiểm tra hai checkout đồng thời tranh một món cuối, VNPay/MoMo thử lại, giao hàng/đánh giá/hoàn tiền, coupon, outbox, audit, thống kê và quyền riêng tư chat; sản phẩm fixture được lưu trữ sau khi test qua. Báo cáo JUnit: `server/ecommerce/build/demo/reports/tests/test/index.html`. Frontend được kiểm chứng bằng build và chạy thử trình duyệt; chưa có bộ E2E tự động đầy đủ hoặc benchmark tải.
 
-```bash
-python sync_products.py
-```
+## Trình diễn và CV
 
-### 5. Khởi chạy server
+Kịch bản 5–10 phút: đăng nhập → địa chỉ → giỏ/coupon → checkout → thanh toán mô phỏng → admin giao hàng → khách đánh giá → admin trả lời/xem báo cáo, nhật ký, email demo. Thử thanh toán lỗi và hủy để trình bày xử lý ngoại lệ.
 
-Development:
+Gợi ý CV — chỉnh theo phần bạn trực tiếp thực hiện và có thể giải thích:
 
-```bash
-python -m fastapi dev main.py
-```
+> Chuyển backend ứng dụng thương mại điện tử từ NestJS/Prisma sang Java Spring Boot/JPA, tích hợp hai frontend React. Xây dựng JWT với refresh token rotation, phân quyền khách hàng/admin, checkout có transaction và khóa tồn kho, coupon, quản lý đơn/đánh giá và thanh toán mô phỏng local. Kiểm chứng bằng JUnit/MockMvc và HTTP smoke test.
 
-Production:
+## Phạm vi
 
-```bash
-python -m uvicorn main:app --host 0.0.0.0 --port 8000
-```
+Bản này phục vụ **demo local, học tập và trình diễn**. Chưa xác nhận ngang toàn bộ hành vi NestJS, chưa di chuyển dữ liệu Prisma cũ, chưa kiểm chứng thanh toán/vận chuyển/SMTP thật hoặc AI sidecar. Chat local không phải LLM/RAG. Tài khoản/khóa demo không dùng khi triển khai public.
 
-> Không dùng `--reload` trong production vì mỗi lần reload sẽ load lại model HuggingFace (~60s).
-
-## Bảo mật
-
-`user_id` chỉ được truyền từ NestJS sau khi đã verify JWT — FastAPI không verify JWT trực tiếp. Mọi query liên quan đến đơn hàng đều có `WHERE user_id = :userId`, không thể lấy đơn của người khác.
-
-FastAPI chỉ expose port nội bộ, không ra internet trực tiếp.
-
-## Lưu ý
-
-- Lần chạy đầu tiên FastAPI tự download model HuggingFace (`bge-m3`, `bge-reranker-v2-m3`) — mất 5-10 phút tuỳ tốc độ mạng.
-- NestJS Proxy timeout đặt là **120s** để cover thời gian khởi động model lần đầu.
-- Cache Redis tự động bỏ qua cho request có `user_id` (tránh cache lệch dữ liệu giữa các user).
+Schema demo dùng `hibernate.ddl-auto=update`. Triển khai thật cần migration có phiên bản, secrets riêng, HTTPS, giới hạn yêu cầu, lưu trữ ảnh phù hợp, job hết hạn đơn và kiểm thử tải/bảo mật. Frontend còn cảnh báo bundle lớn. Xem [ai/README.md](ai/README.md) nếu tiếp tục phát triển sidecar.

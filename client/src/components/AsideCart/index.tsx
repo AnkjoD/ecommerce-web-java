@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from 'react'
+import { useContext } from 'react'
 import {
   Drawer,
   Box,
@@ -8,13 +8,10 @@ import {
   Button,
   alpha,
   useTheme,
-  Divider,
-  Badge
-} from '@mui/material'
-import { motion, AnimatePresence } from 'framer-motion'
+  } from '@mui/material'
+import { motion } from 'framer-motion'
 import CloseIcon from '@mui/icons-material/Close'
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import AddIcon from '@mui/icons-material/Add'
 import RemoveIcon from '@mui/icons-material/Remove'
 import { AppContext } from '~/contexts/app.context'

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import axios from 'axios'
+
 
 export interface Ward {
   name: string
@@ -22,8 +22,12 @@ export default function useProvinces() {
   return useQuery({
     queryKey: ['provinces'],
     queryFn: async () => {
-      const response = await axios.get<Province[]>('https://provinces.open-api.vn/api/?depth=3')
-      return response.data
+      // Small static demo dataset; not an authoritative administrative directory.
+      return [
+        { name: 'Hà Nội', code: 1, districts: [{ name: 'Cầu Giấy', code: 101, wards: [{ name: 'Dịch Vọng', code: 10101 }] }] },
+        { name: 'Hồ Chí Minh', code: 79, districts: [{ name: 'Quận 1', code: 7901, wards: [{ name: 'Bến Nghé', code: 790101 }] }] },
+        { name: 'Đà Nẵng', code: 48, districts: [{ name: 'Hải Châu', code: 4801, wards: [{ name: 'Hải Châu I', code: 480101 }] }] }
+      ] as Province[]
     },
     staleTime: Infinity, // Dữ liệu tỉnh/thành phố hiếm khi thay đổi nên cache vĩnh viễn trong session
     retry: 3

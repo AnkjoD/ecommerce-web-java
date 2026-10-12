@@ -20,8 +20,15 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.ok(productService.findAll(params)));
     }
 
+    @GetMapping("/meta/unique-tags") public Object tags(){return ApiResponse.ok(productService.uniqueTags());}
+
+    @GetMapping("/{id}/variants")
+    public ResponseEntity<ApiResponse<?>> getVariants(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.ok(productService.publicVariants(id)));
+    }
+
     @GetMapping("/{slug}")
     public ResponseEntity<ApiResponse<?>> getBySlug(@PathVariable String slug) {
-        return ResponseEntity.ok(ApiResponse.ok(productService.findBySlug(slug)));
+        return ResponseEntity.ok(ApiResponse.ok(productService.findPublicVariant(slug)));
     }
 }

@@ -19,13 +19,18 @@ public class AdminProductController {
 
     private final ProductService productService;
 
+    @GetMapping
+    public Object list(@RequestParam java.util.Map<String,String> params) {
+        return ApiResponse.ok(productService.findAll(params, true));
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<?>> create(@Valid @RequestBody ProductCreateDto dto) {
         return ResponseEntity.ok(ApiResponse.ok(productService.create(dto)));
     }
 
-    @PatchMapping("/{id}")
-    public ResponseEntity<ApiResponse<?>> update(@PathVariable String id, @RequestBody ProductUpdateDto dto) {
+    @PatchMapping({"/{id}", "/{id}/metadata"})
+    public ResponseEntity<ApiResponse<?>> update(@PathVariable String id, @Valid @RequestBody ProductUpdateDto dto) {
         return ResponseEntity.ok(ApiResponse.ok(productService.update(id, dto)));
     }
 
@@ -34,6 +39,10 @@ public class AdminProductController {
         productService.delete(id);
         return ResponseEntity.ok(ApiResponse.ok("Đã xóa sản phẩm", null));
     }
+
+    @DeleteMapping("/variants/{id}")
+    public Object deleteVariant(@PathVariable String id){productService.deleteVariant(id);return ApiResponse.ok(null);}
+    @PostMapping("/sync") public Object sync(){return ApiResponse.ok(productService.sync());}
 
     @PostMapping("/{id}/variants")
     public ResponseEntity<ApiResponse<?>> addVariant(@PathVariable String id, @Valid @RequestBody VariantCreateDto dto) {

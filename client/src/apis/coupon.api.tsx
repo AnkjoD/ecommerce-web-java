@@ -1,3 +1,4 @@
+import type { SuccessResponseApi } from '~/types/utils.type'
 import http from '~/utils/http'
 
 export interface ValidateCouponReq {

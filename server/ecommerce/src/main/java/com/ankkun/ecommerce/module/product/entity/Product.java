@@ -3,6 +3,8 @@ package com.ankkun.ecommerce.module.product.entity;
 import com.ankkun.ecommerce.module.category.entity.Category;
 import com.ankkun.ecommerce.module.review.entity.Review;
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -42,18 +44,22 @@ public class Product {
     private String status = "draft";
 
     // Store JSON as String (Hibernate will handle it via columnDefinition)
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     @Builder.Default
     private String description = "{}";
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     @Builder.Default
     private String attributes = "{}";
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     @Builder.Default
     private String media = "{}";
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     @Builder.Default
     private String seo = "{}";

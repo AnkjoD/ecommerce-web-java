@@ -21,7 +21,7 @@ import path from '~/constants/path'
 import { generateNameId } from '~/utils/url'
 import CheckoutModal from './CheckoutModal'
 
-const DEFAULT_PRODUCT_IMAGE = 'https://placehold.co/600x400?text=Homura+Mall'
+const DEFAULT_PRODUCT_IMAGE = '/assets/demo-product-0.svg'
 
 interface ExtendedPurchase extends Purchase {
   checked: boolean
@@ -134,7 +134,7 @@ function Cart() {
   }
 
   const handleConfirmOrder = (data: { address_id: string; payment_method: string }) => {
-    buyPurchases(data)
+    buyPurchases({ ...data, item_ids: extendedPurchases.filter(item => item.checked).map(item => item.id) })
   }
 
   const totalCheckedPrice = useMemo(() => {
@@ -353,7 +353,7 @@ function Cart() {
                     </Stack>
                     <Stack direction="row" justifyContent="space-between">
                       <Typography variant="body2" color="text.secondary" fontWeight={700}>Phí vận chuyển</Typography>
-                      <Typography variant="body1" fontWeight={900} color="success.main">MIỄN PHÍ</Typography>
+                      <Typography variant="body2" fontWeight={700}>Tính khi đặt hàng</Typography>
                     </Stack>
                     {totalSaving > 0 && (
                       <Stack direction="row" justifyContent="space-between">
@@ -397,9 +397,7 @@ function Cart() {
 
                   <Stack direction="row" spacing={2} justifyContent="center" sx={{ mt: 3, opacity: 0.3 }}>
                     {/* Add trust symbols here */}
-                    <Box component="img" src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" sx={{ height: 12 }} />
-                    <Box component="img" src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" sx={{ height: 20 }} />
-                    <Box component="img" src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" sx={{ height: 15 }} />
+                    <Typography variant="caption">DEMO LOCAL</Typography>
                   </Stack>
                 </Paper>
 
@@ -414,8 +412,8 @@ function Cart() {
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   </Box>
                   <Box>
-                    <Typography variant="caption" fontWeight={1000} sx={{ display: 'block', mb: 0.5 }}>TRẢ HÀNG MIỄN PHÍ TRONG 30 NGÀY</Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.7 }}>Yên tâm mua sắm với chính sách đổi trả linh hoạt của chúng tôi.</Typography>
+                    <Typography variant="caption" fontWeight={1000} sx={{ display: 'block', mb: 0.5 }}>MUA HÀNG MÔ PHỎNG LOCAL</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.7 }}>Không phát sinh thanh toán hoặc giao hàng thật.</Typography>
                   </Box>
                 </Box>
               </Box>

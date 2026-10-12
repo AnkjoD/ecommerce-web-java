@@ -31,7 +31,7 @@ export default function ProductLightbox({ images, productName, open, initialInde
     }
   }, [open, initialIndex]);
 
-  const imageList = useMemo(() => images.length > 0 ? images : ['https://placehold.co/600x400'], [images]);
+  const imageList = useMemo(() => images.length > 0 ? images : ['/assets/demo-product-0.svg'], [images]);
   const currentImage = imageList[activeIndex];
 
   // Logic chuyển ảnh

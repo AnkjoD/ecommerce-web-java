@@ -1,5 +1,5 @@
 import { createContext } from 'react'
-import { getAccessTokenFromLS, getProfileFromLS } from '~/utils/auth' 
+import { getProfileFromLS } from '~/utils/auth'
 import { type User } from '~/types/user.type'
 // 1. Cập nhật Interface: Thêm profile và setProfile
 export interface AppContextInterface {
@@ -7,8 +7,8 @@ export interface AppContextInterface {
   setIsAuthenticated: React.Dispatch<React.SetStateAction<boolean>>
   profile: User | null
   setProfile: React.Dispatch<React.SetStateAction<User | null>>
-  reset: () => void 
-  
+  reset: () => void
+
   // 🛒 Cart States
   isOpenAsideCart: boolean
   setIsOpenAsideCart: React.Dispatch<React.SetStateAction<boolean>>
@@ -16,7 +16,7 @@ export interface AppContextInterface {
   cartBumpCount: number
   triggerCartBump: () => void
   refreshCart: () => void
-  
+
   // ✈️ Flying Animation
   flyingData: { image: string; startPos: any } | null
   setFlyingData: React.Dispatch<React.SetStateAction<{ image: string; startPos: any } | null>>
@@ -26,10 +26,10 @@ export interface AppContextInterface {
 export const initialAppContext: AppContextInterface = {
   isAuthenticated: Boolean(getProfileFromLS()),
   setIsAuthenticated: () => null,
-  profile: getProfileFromLS(), 
+  profile: getProfileFromLS(),
   setProfile: () => null,
   reset: () => null,
-  
+
   // 🛒 Cart Defaults
   isOpenAsideCart: false,
   setIsOpenAsideCart: () => null,

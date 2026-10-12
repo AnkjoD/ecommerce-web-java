@@ -31,7 +31,7 @@ const purchaseApi = {
     },
 
     // Mua sản phẩm (Checkout)
-    buyPurchases(body: { address_id: string; payment_method: string; coupon_code?: string; save_card?: boolean }) {
+    buyPurchases(body: { address_id: string; payment_method: string; coupon_code?: string; save_card?: boolean; item_ids?: string[] }) {
         return http.post<SuccessResponseApi<Order>>(`/orders`, body);
     },
 }

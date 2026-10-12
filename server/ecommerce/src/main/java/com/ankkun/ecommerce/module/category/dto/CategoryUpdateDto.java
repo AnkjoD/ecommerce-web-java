@@ -5,7 +5,8 @@ import lombok.Data;
 
 @Data
 public class CategoryUpdateDto {
-    private String name;
+    @jakarta.validation.constraints.Size(min=1,max=255) private String name;
+    @JsonProperty("parent_id") private String parentId;
     
     @JsonProperty("image_url")
     private String imageUrl;

@@ -24,6 +24,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('[Auth] Refreshing profile...');
     try {
       const profile = await authApi.getMe();
+      if (profile.role !== "admin") throw new Error("Admin session required");
       console.log('[Auth] Profile fetched successfully:', profile.email);
       setProfileToLS(profile);
       setUser(profile);

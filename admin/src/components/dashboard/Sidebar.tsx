@@ -2,7 +2,7 @@ import { LayoutDashboard, Package, FolderTree, Percent, ShoppingCart, Star, User
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-type Page = 'overview' | 'products' | 'categories' | 'coupons' | 'orders' | 'reviews' | 'users' | 'audit-logs';
+type Page = 'overview' | 'products' | 'categories' | 'coupons' | 'orders' | 'reviews' | 'users' | 'audit-logs' | 'outbox';
 
 interface SidebarProps {
   currentPage: Page;
@@ -20,6 +20,7 @@ const navItems: { id: Page; label: string; icon: React.ElementType }[] = [
   { id: 'reviews', label: 'Đánh giá', icon: Star },
   { id: 'users', label: 'Người dùng', icon: Users },
   { id: 'audit-logs', label: 'Nhật ký', icon: History },
+  { id: 'outbox', label: 'Email demo', icon: History },
 ];
 
 export default function Sidebar({ currentPage, onNavigate, onSignOut, userEmail }: SidebarProps) {

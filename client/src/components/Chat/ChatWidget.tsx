@@ -25,7 +25,7 @@ export default function ChatWidget() {
   const [chatHistory, setChatHistory] = useState<(ChatMessage & { products?: any[] })[]>([
     {
       role: 'assistant',
-      content: '👋 Xin chào! Mình là AI tư vấn của Homura Shop. Mình có thể giúp bạn tìm kiếm sản phẩm, kiểm tra giá, hoặc tư vấn theo sở thích. Bạn cần mình giúp gì ạ?',
+      content: '👋 Xin chào! Mình là trợ lý demo local của Homura Shop. Mình có thể giúp bạn tìm kiếm sản phẩm, kiểm tra giá, hoặc tư vấn theo sở thích. Bạn cần mình giúp gì ạ?',
     }
   ])
   
@@ -169,7 +169,7 @@ export default function ChatWidget() {
                   <Bot size={20} />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>Homura AI Assistant</h3>
+                  <h3 style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>Homura · Trợ lý local</h3>
                   <p style={{ margin: 0, fontSize: '12px', opacity: 0.8 }}>Luôn sẵn sàng hỗ trợ</p>
                 </div>
               </div>
@@ -281,7 +281,7 @@ export default function ChatWidget() {
                             return (
                               <a
                                 key={i}
-                                href={`/product/${p.id}`}
+                                href={p.url || `/${p.name}-i.${p.id}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 style={{
@@ -383,7 +383,7 @@ export default function ChatWidget() {
                   type="text"
                   value={message}
                   onChange={e => setMessage(e.target.value)}
-                  placeholder="Hỏi Homura AI bất cứ điều gì..."
+                  placeholder="Hỏi sản phẩm, voucher hoặc đơn của bạn..."
                   disabled={isLoading}
                   style={{
                     width: '100%',

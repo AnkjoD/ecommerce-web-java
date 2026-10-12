@@ -133,12 +133,12 @@ export default function AppTheme({ children }: { children: React.ReactNode }) {
                             transform: 'translateY(-3px) scale(1.02)',
                         }
                     },
-                    containedPrimary: {
-                        boxShadow: (theme) => `0 10px 30px ${alpha(theme.palette.primary.main, 0.5)}`,
+                    containedPrimary: ({ theme }) => ({
+                        boxShadow: `0 10px 30px ${alpha(theme.palette.primary.main, 0.5)}`,
                         '&:hover': {
-                            boxShadow: (theme) => `0 15px 40px ${alpha(theme.palette.primary.main, 0.7)}`,
+                            boxShadow: `0 15px 40px ${alpha(theme.palette.primary.main, 0.7)}`,
                         }
-                    }
+                    })
                 }
             },
             MuiAppBar: {

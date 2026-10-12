@@ -1,5 +1,4 @@
 import axios from 'axios'
-import http from '~/utils/http'
 import { type SuccessResponseApi } from '~/types/utils.type'
 
 export interface ChatMessage {

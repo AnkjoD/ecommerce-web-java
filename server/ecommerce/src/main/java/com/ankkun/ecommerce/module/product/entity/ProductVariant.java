@@ -3,6 +3,8 @@ package com.ankkun.ecommerce.module.product.entity;
 import com.ankkun.ecommerce.module.cart.entity.CartItem;
 import com.ankkun.ecommerce.module.order.entity.OrderItem;
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -30,6 +32,7 @@ public class ProductVariant {
     private String color;
     private String size;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     @Builder.Default
     private String options = "{}";

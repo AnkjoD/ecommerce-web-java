@@ -34,3 +34,12 @@ client/node_modules/
 docker-compose.override.yml
 .agent/
 scripts/
+
+.demo/
+!scripts/
+scripts/*
+!scripts/demo-build.gradle
+!scripts/start-demo.ps1
+!scripts/stop-demo.ps1
+!scripts/smoke-test.ps1
+!scripts/smoke-features.py

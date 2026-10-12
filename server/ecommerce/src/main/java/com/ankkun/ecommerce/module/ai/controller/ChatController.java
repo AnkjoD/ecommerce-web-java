@@ -21,7 +21,7 @@ public class ChatController {
     @PostMapping("/completions")
     public ApiResponse<Object> chatCompletion(
             @AuthenticationPrincipal String userId,
-            @RequestBody ChatRequest req
+            @jakarta.validation.Valid @RequestBody ChatRequest req
     ) {
         var result = chatService.chatCompletion(userId, req.getMessage(), req.getChatHistory());
         return ApiResponse.ok(result);

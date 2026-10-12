@@ -53,13 +53,14 @@ public class SecurityConfig {
                         "/api/auth/admin/login", "/api/auth/refresh").permitAll()
                 .requestMatchers(HttpMethod.GET,
                         "/api/products/**", "/api/categories/**", "/api/reviews/**",
-                        "/api/search/**").permitAll()
+                        "/api/search/**", "/api/coupons/active", "/api/payments/config", "/api/files/**").permitAll()
                 .requestMatchers("/api/payments/vnpay-return").permitAll()
                 // Admin only
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 // Everything else requires auth
                 .anyRequest().authenticated()
             )
+            .exceptionHandling(e -> e.authenticationEntryPoint((req, res, ex) -> res.sendError(401)))
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -68,7 +69,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
-        cfg.setAllowedOrigins(List.of(frontendUrl, "http://localhost:3000", "http://localhost:8081"));
+        cfg.setAllowedOrigins(List.of(frontendUrl, "http://localhost:3000", "http://localhost:8080", "http://localhost:8081"));
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         cfg.setAllowedHeaders(List.of("*"));
         cfg.setAllowCredentials(true);

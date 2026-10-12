@@ -42,7 +42,7 @@ export default function AnalyticsSection({ stats }: { stats: any }) {
     if (revenueHistory.length < 2) return { value: 0, isPos: true };
     const latest = revenueHistory[revenueHistory.length - 1]?.revenue || 0;
     const previous = revenueHistory[revenueHistory.length - 2]?.revenue || 0;
-    if (previous === 0) return { value: 100, isPos: true };
+    if (previous === 0) return { value: latest === 0 ? 0 : "—", isPos: true };
     const diff = ((latest - previous) / previous) * 100;
     return { value: Math.abs(diff).toFixed(1), isPos: diff >= 0 };
   }, [revenueHistory]);
@@ -154,11 +154,11 @@ export default function AnalyticsSection({ stats }: { stats: any }) {
                 <div className="space-y-1 relative z-10">
                    <p className="text-[9px] uppercase tracking-[0.3em] font-black text-muted-foreground mb-4 opacity-30">Phân khúc cao cấp</p>
                    <h3 className="text-4xl lg:text-5xl font-black text-primary font-display tracking-tighter leading-none italic">
-                      98<span className="text-xl ml-1">%</span>
+                      {Number(stats?.rating_average || 0).toFixed(1)}<span className="text-xl ml-1">/5</span>
                    </h3>
                 </div>
                 <div className="mt-6 flex items-center gap-2 text-[10px] font-black text-muted-foreground opacity-40 uppercase tracking-widest">
-                   <Award size={14} className="text-primary" /> Chỉ số hài lòng khách hàng
+                   <Award size={14} className="text-primary" /> Điểm đánh giá từ khách hàng
                 </div>
              </div>
           </div>

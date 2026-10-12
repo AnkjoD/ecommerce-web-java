@@ -15,6 +15,12 @@ import org.springframework.web.bind.annotation.*;
 public class OrderController {
     private final OrderService orderService;
 
+    @GetMapping
+    public ResponseEntity<ApiResponse<?>> history(@AuthenticationPrincipal String userId,
+            @RequestParam(required=false) String status, @RequestParam(defaultValue="1") int page, @RequestParam(defaultValue="20") int limit) {
+        return ResponseEntity.ok(ApiResponse.ok(orderService.history(userId, status, page, limit)));
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<?>> createFromCart(@AuthenticationPrincipal String userId, @Valid @RequestBody OrderCreateRequest req) {
         return ResponseEntity.ok(ApiResponse.ok(orderService.createFromCart(userId, req)));

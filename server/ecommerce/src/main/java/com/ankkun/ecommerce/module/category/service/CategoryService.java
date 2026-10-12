@@ -20,10 +20,11 @@ import java.util.stream.Collectors;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final com.ankkun.ecommerce.module.product.repository.ProductRepository products;
 
     public List<CategoryResponse> findAll() {
         return categoryRepository.findByParentIdIsNullOrderBySortOrderAsc()
-                .stream().map(this::toResponse).collect(Collectors.toList());
+                .stream().filter(Category::getIsActive).map(this::toResponse).collect(Collectors.toList());
     }
 
     public CategoryResponse findBySlug(String slug) {
@@ -33,8 +34,11 @@ public class CategoryService {
 
     @Transactional
     public CategoryResponse create(CategoryCreateDto dto) {
+        if (dto.getSlug() == null || dto.getSlug().isBlank()) dto.setSlug("category-"+java.util.UUID.randomUUID());
         if (categoryRepository.existsBySlug(dto.getSlug())) throw new ConflictException("Slug đã tồn tại");
 
+        if(dto.getParentId()!=null&&dto.getParentId().isBlank())dto.setParentId(null);
+        if(dto.getParentId()!=null&&!categoryRepository.existsById(dto.getParentId()))throw new NotFoundException("Danh mục cha không tồn tại");
         Category cat = Category.builder()
                 .name(dto.getName())
                 .slug(dto.getSlug())
@@ -50,6 +54,7 @@ public class CategoryService {
     public CategoryResponse update(String id, CategoryUpdateDto dto) {
         Category cat = categoryRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Category not found"));
+        if(dto.getParentId()!=null){String parent=dto.getParentId().isBlank()?null:dto.getParentId();if(parent!=null){if(parent.equals(id)||getDescendantIds(id).contains(parent))throw new com.ankkun.ecommerce.common.exception.BadRequestException("Danh mục không thể tạo vòng lặp");if(!categoryRepository.existsById(parent))throw new NotFoundException("Danh mục cha không tồn tại");}cat.setParentId(parent);}
         if (dto.getName() != null) cat.setName(dto.getName());
         if (dto.getImageUrl() != null) cat.setImageUrl(dto.getImageUrl());
         if (dto.getSortOrder() != null) cat.setSortOrder(dto.getSortOrder());
@@ -59,7 +64,9 @@ public class CategoryService {
 
     @Transactional
     public void delete(String id) {
-        categoryRepository.deleteById(id);
+        var category=categoryRepository.findById(id).orElseThrow(()->new NotFoundException("Danh mục không tồn tại"));
+        if(!categoryRepository.findByParentId(id).isEmpty()||products.findAll().stream().anyMatch(p->id.equals(p.getCategoryId())))throw new com.ankkun.ecommerce.common.exception.BadRequestException("Hãy chuyển sản phẩm và danh mục con trước khi xóa");
+        categoryRepository.delete(category);
     }
 
     // Recursive: collect all descendant IDs
@@ -87,4 +94,5 @@ public class CategoryService {
         }
         return r;
     }
+    public List<CategoryResponse> adminList(){return categoryRepository.findAll().stream().map(this::toResponse).toList();}
 }

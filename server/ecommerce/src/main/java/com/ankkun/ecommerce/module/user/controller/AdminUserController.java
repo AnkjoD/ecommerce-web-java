@@ -18,13 +18,14 @@ public class AdminUserController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<?>> getAll(@RequestParam(defaultValue = "1") int page,
-                                                 @RequestParam(defaultValue = "20") int limit) {
-        var result = userService.getAllUsers(PageRequest.of(page - 1, limit));
-        return ResponseEntity.ok(ApiResponse.ok(result));
+                                                 @RequestParam(defaultValue = "20") int limit,@RequestParam(required=false)String search) {
+        page=Math.max(1,page);limit=Math.max(1,Math.min(100,limit));
+        var result = userService.getAllUsers(PageRequest.of(page - 1, limit),search);
+        return ResponseEntity.ok(ApiResponse.ok(com.ankkun.ecommerce.common.dto.PaginatedResponse.of(result.getContent().stream().map(UserService::toResponse).toList(), page, limit, result.getTotalElements())));
     }
 
     @PatchMapping("/{id}/toggle-active")
     public ResponseEntity<ApiResponse<?>> toggleActive(@PathVariable String id) {
-        return ResponseEntity.ok(ApiResponse.ok(userService.toggleActive(id)));
+        return ResponseEntity.ok(ApiResponse.ok(UserService.toResponse(userService.toggleActive(id))));
     }
 }

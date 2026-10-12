@@ -74,7 +74,7 @@ export default function ProfileForm() {
     if (profile) {
       const dob = profile.date_of_birth ? new Date(profile.date_of_birth) : new Date(2000, 0, 1)
       reset({
-        name: profile.name || '',
+        name: profile.full_name || profile.name || '',
         phone: profile.phone || '',
         address: profile.address || '',
         avatar: profile.avatar || '',
@@ -97,8 +97,7 @@ export default function ProfileForm() {
 
   const onSubmit = async (data: FormData) => {
     try {
-      const dateOfBirth = new Date(data.year!, data.month! - 1, data.day!)
-      const finalData = omit({ ...data, date_of_birth: dateOfBirth.toISOString() }, [
+      const finalData = omit({ ...data, date_of_birth: `${data.year}-${String(data.month).padStart(2, '0')}-${String(data.day).padStart(2, '0')}` }, [
         'day',
         'month',
         'year'
@@ -232,7 +231,7 @@ export default function ProfileForm() {
                     'Họ và tên',
                     <AnimatePresence mode='wait'>
                       {!isEditMode ? (
-                        <Typography key="view" fontWeight={1000} variant="h6">{profile.name}</Typography>
+                        <Typography key="view" fontWeight={1000} variant="h6">{profile.full_name || profile.name}</Typography>
                       ) : (
                         <Controller
                           key="edit"

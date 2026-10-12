@@ -15,7 +15,7 @@ export default function useUserProfile() {
   const profileQuery = useQuery({
     queryKey: ['profile'],
     queryFn: userApi.getProfile,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
     retry: 0,
     enabled: isAuthenticated, // Dùng context thay vì hàm luôn return false
     initialData: () => {
@@ -39,8 +39,8 @@ export default function useUserProfile() {
       }
 
       // 🛠️ FIX 422: Format date to YYYY-MM-DD which is strictly required by some backends
-      const formattedDate = data.date_of_birth 
-        ? new Date(data.date_of_birth).toISOString().split('T')[0] 
+      const formattedDate = data.date_of_birth
+        ? new Date(data.date_of_birth).toISOString().split('T')[0]
         : undefined
 
       // 🛠️ FIX 422: Backend expects 'full_name' but User type has 'name'
@@ -60,12 +60,12 @@ export default function useUserProfile() {
       setProfileToLS(newProfile)
       queryClient.setQueryData(['profile'], res)
 
-      toast.success('Cập nhật hồ sơ thành công!')
+
       return newProfile
     } catch (error) {
       const axiosError = error as AxiosError<ErrorResponseApi<{ [key: string]: string }>>
       const status = axiosError.response?.status
-      
+
       // 🚀 Handle Timeout & Specific Cloudinary errors (499, 504)
       if (axiosError.code === 'ECONNABORTED' || status === 499 || status === 504) {
         toast.error('Yêu cầu quá hạn. Vui lòng kiểm tra kết nối mạng hoặc cấu hình Cloudinary (Server có thể đang bị treo).')
@@ -73,7 +73,7 @@ export default function useUserProfile() {
         const message = axiosError.response?.data?.message || 'Lỗi cập nhật hồ sơ'
         toast.error(message)
       }
-      
+
       // 🚀 Log detailed validation errors for debugging
       if (status === 422) {
         console.group('❌ [Elite Debug] Profile Update Failed (422)')

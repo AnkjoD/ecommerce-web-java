@@ -108,7 +108,7 @@ const AccountMenu = ({ profile }: { profile: User | null }) => {
           noWrap // Tự động ... nếu dài
           sx={{ fontWeight: 'bold', textAlign: 'center' }}
         >
-          {profile?.name}
+          {profile?.full_name}
         </Typography>
         <Divider sx={{ mt: 1 }} />
       </Box>
@@ -145,7 +145,7 @@ const AccountMenu = ({ profile }: { profile: User | null }) => {
             <Box className='flex items-center gap-2 px-2 rounded hover:cursor-pointer max-w-[200px]'>
               {/* Avatar */}
               <LazyLoadImage
-                src={profile.avatar}
+                src={profile.avatar || undefined}
                 alt='User Avatar'
                 width={32}
                 height={32}
@@ -162,7 +162,7 @@ const AccountMenu = ({ profile }: { profile: User | null }) => {
                   maxWidth: '120px' // Giới hạn chiều rộng tối đa
                 }}
               >
-                {profile.name}
+                {profile.full_name}
               </Typography>
             </Box>
           </AppTooltip>
@@ -199,7 +199,7 @@ const AccountMenu = ({ profile }: { profile: User | null }) => {
           <AppTooltip title={renderUserDropdownMenu()}>
             <Box sx={{ cursor: 'pointer', display: 'flex' }}>
               <LazyLoadImage
-                src={profile.avatar}
+                src={profile.avatar || undefined}
                 width={32}
                 height={32}
                 alt='profile'

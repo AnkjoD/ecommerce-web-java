@@ -13,17 +13,12 @@ import {
   Link,
   Divider,
   Chip,
-  IconButton,
-  Collapse
-} from '@mui/material'
+  IconButton} from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
-import { motion, AnimatePresence } from 'framer-motion'
 
 // Icons
 import NavigateNextIcon from '@mui/icons-material/NavigateNext'
-import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import LocalActivityIcon from '@mui/icons-material/LocalActivity'
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight'
 
 // Components & API
@@ -43,10 +38,9 @@ import NotFound from '~/pages/NotFound'
 import SEO from '~/components/SEO'
 import path from '~/constants/path'
 import { AppContext } from '~/contexts/app.context'
-import FlyingProduct from './FlyingProduct'
 import { toast } from 'react-toastify'
 
-const DEFAULT_PRODUCT_IMAGE = 'https://placehold.co/600x400?text=Homura+Mall'
+const DEFAULT_PRODUCT_IMAGE = '/assets/demo-product-0.svg'
 
 export default function ProductDetail() {
   const theme = useTheme()
@@ -148,7 +142,7 @@ export default function ProductDetail() {
     const values = new Set<string>()
     allVariants.forEach(v => {
       const actualKey = Object.keys(v.options || {}).find(k => k.trim().toLowerCase() === normKey)
-      if (actualKey && v.options[actualKey]) values.add(v.options[actualKey])
+      if (actualKey && v.options?.[actualKey]) values.add(v.options?.[actualKey])
     })
     return Array.from(values)
   }
@@ -194,7 +188,7 @@ export default function ProductDetail() {
     if (!match) {
       match = allVariants.find(v => {
         const vKey = Object.keys(v.options || {}).find(k => k.trim().toLowerCase() === normTarget)
-        return vKey && v.options[vKey] === value
+        return vKey && v.options?.[vKey] === value
       })
     }
 

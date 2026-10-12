@@ -17,18 +17,18 @@ public class UserController {
 
     private final UserService userService;
 
-    @GetMapping("/profile")
+    @GetMapping({"/profile", "/me"})
     public ResponseEntity<ApiResponse<?>> getProfile(@AuthenticationPrincipal String userId) {
         return ResponseEntity.ok(ApiResponse.ok(userService.getProfile(userId)));
     }
 
-    @PatchMapping("/profile")
+    @PatchMapping({"/profile", "/me"})
     public ResponseEntity<ApiResponse<?>> updateProfile(@AuthenticationPrincipal String userId,
-                                                        @RequestBody UpdateProfileDto dto) {
+                                                        @Valid @RequestBody UpdateProfileDto dto) {
         return ResponseEntity.ok(ApiResponse.ok(userService.updateProfile(userId, dto)));
     }
 
-    @PostMapping("/change-password")
+    @PostMapping({"/change-password", "/me/change-password"})
     public ResponseEntity<ApiResponse<Void>> changePassword(@AuthenticationPrincipal String userId,
                                                             @Valid @RequestBody ChangePasswordDto dto) {
         userService.changePassword(userId, dto);

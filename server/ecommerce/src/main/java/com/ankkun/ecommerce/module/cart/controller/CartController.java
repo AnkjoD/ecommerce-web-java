@@ -15,24 +15,24 @@ import org.springframework.web.bind.annotation.*;
 public class CartController {
     private final CartService cartService;
 
-    @GetMapping("/api/cart")
+    @GetMapping("/api/carts")
     public ResponseEntity<ApiResponse<?>> getCart(@AuthenticationPrincipal String userId) {
         return ResponseEntity.ok(ApiResponse.ok(cartService.getCart(userId)));
     }
 
-    @PostMapping("/api/cart/items")
+    @PostMapping("/api/carts/items")
     public ResponseEntity<ApiResponse<?>> addItem(@AuthenticationPrincipal String userId, @Valid @RequestBody CartItemRequest req) {
         return ResponseEntity.ok(ApiResponse.ok(cartService.addItem(userId, req)));
     }
 
-    @PutMapping("/api/cart/items/{variantId}")
+    @PatchMapping("/api/carts/items/{variantId}")
     public ResponseEntity<ApiResponse<?>> updateItem(@AuthenticationPrincipal String userId,
                                                      @PathVariable String variantId,
-                                                     @RequestBody CartItemUpdateRequest req) {
+                                                     @Valid @RequestBody CartItemUpdateRequest req) {
         return ResponseEntity.ok(ApiResponse.ok(cartService.updateItem(userId, variantId, req.getQuantity())));
     }
 
-    @DeleteMapping("/api/cart/items/{variantId}")
+    @DeleteMapping("/api/carts/items/{variantId}")
     public ResponseEntity<ApiResponse<Void>> removeItem(@AuthenticationPrincipal String userId, @PathVariable String variantId) {
         cartService.removeItem(userId, variantId);
         return ResponseEntity.ok(ApiResponse.ok("Removed", null));

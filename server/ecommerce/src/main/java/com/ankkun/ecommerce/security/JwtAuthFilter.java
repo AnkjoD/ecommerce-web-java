@@ -22,17 +22,29 @@ import java.util.List;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final com.ankkun.ecommerce.module.user.repository.UserRepository users;
+    @org.springframework.beans.factory.annotation.Value("${app.frontend-url}")
+    private String frontendUrl;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+        String origin = request.getHeader("Origin");
+        if (!java.util.Set.of("GET", "HEAD", "OPTIONS").contains(request.getMethod()) && origin != null
+                && !java.util.List.of(frontendUrl, "http://localhost:3000", "http://localhost:8080", "http://localhost:8081").contains(origin)) {
+            response.sendError(403); return;
+        }
         String token = extractToken(request);
 
         if (token != null && jwtTokenProvider.validateAccessToken(token)) {
             Claims claims = jwtTokenProvider.parseAccessToken(token);
             String userId = claims.getSubject();
-            String role = claims.get("role", String.class);
+            var user = users.findById(userId).orElse(null);
+            if (user == null || !Boolean.TRUE.equals(user.getIsActive())) { response.sendError(401); return; }
+            Number version=claims.get("ver",Number.class);
+            if(version==null || version.intValue()!=user.getTokenVersion()) {response.sendError(401);return;}
+            String role = user.getRole().name();
 
             UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                     userId, null,
@@ -48,6 +60,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String header = request.getHeader("Authorization");
         if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
             return header.substring(7);
+        }
+        if (request.getCookies() != null) {
+            for (var cookie : request.getCookies()) {
+                if ((request.getRequestURI().startsWith("/api/admin/") || "admin".equals(request.getHeader("X-Client-App"))
+                        ? "adminAccessToken" : "accessToken").equals(cookie.getName())) return cookie.getValue();
+            }
         }
         return null;
     }

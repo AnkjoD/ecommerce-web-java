@@ -7,7 +7,6 @@ import {
   Button,
   Rating,
   List,
-  InputAdornment,
   alpha,
   useTheme,
   Accordion,
@@ -21,7 +20,6 @@ import RestartAltIcon from '@mui/icons-material/RestartAlt'
 
 // Icons
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import SearchIcon from '@mui/icons-material/Search'
 import TuneIcon from '@mui/icons-material/Tune'
 
 import type { Category } from '~/types/category.type'
@@ -213,8 +211,7 @@ const FilterAccordion = ({ title, children, defaultExpanded = false }: { title: 
 )
 
 const FilterContent = ({ 
-    theme, activeCategory, updateParams, toggleParent, openParents, categoryTree, register, handleSubmit, onSubmit, isMobile, queryParams, onClose 
-}: any) => (
+    theme, activeCategory, updateParams, toggleParent, openParents, categoryTree, register, handleSubmit, onSubmit, isMobile, queryParams}: any) => (
     <>
       <Box sx={{ mb: 4 }}>
         <Typography sx={{ 

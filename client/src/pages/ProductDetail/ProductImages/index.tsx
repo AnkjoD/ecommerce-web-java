@@ -28,7 +28,7 @@ const ProductImages = forwardRef<HTMLImageElement, ProductImagesProps>(({ images
 
   const thumbnailContainerRef = useRef<HTMLDivElement>(null);
 
-  const imageList = useMemo(() => images.length > 0 ? images : ['https://via.placeholder.com/500'], [images]);
+  const imageList = useMemo(() => images.length > 0 ? images : ['/assets/demo-product-0.svg'], [images]);
   const currentImage = imageList[activeImgIndex];
 
   // Logic Auto Slide (Giữ nguyên)

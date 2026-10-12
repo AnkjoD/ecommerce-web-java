@@ -6,8 +6,10 @@ class Http {
   async request<T>(url: string, options: RequestInit = {}): Promise<T> {
     const response = await fetch(`${this.baseURL}${url}`, {
       ...options,
+      credentials: "include",
       headers: {
         'Content-Type': 'application/json',
+        'X-Client-App': 'admin',
         ...options.headers,
       },
     });
@@ -37,6 +39,7 @@ class Http {
   post<T>(url: string, body?: any, options?: RequestInit) {
     return this.request<T>(url, {
       ...options,
+      credentials: "include",
       method: 'POST',
       body: JSON.stringify(body),
     });
@@ -45,6 +48,7 @@ class Http {
   patch<T>(url: string, body?: any, options?: RequestInit) {
     return this.request<T>(url, {
       ...options,
+      credentials: "include",
       method: 'PATCH',
       body: JSON.stringify(body),
     });

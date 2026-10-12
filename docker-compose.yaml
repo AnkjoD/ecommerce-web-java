@@ -68,6 +68,7 @@ services:
       - "6000:6000"
     environment:
       SERVER_PORT: 6000
+      SERVER_ADDRESS: 0.0.0.0
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
       DATABASE_URL: "jdbc:postgresql://db:5432/ecommerce"
       DB_USERNAME: ${POSTGRES_USER}
